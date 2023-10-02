@@ -37,8 +37,10 @@ class Dock(StaticElement):
     self.name = name
     self.destinations = []
     self.cargo: Cargo = []
+    self.ferries = []
     self.pos = [0,0]
     self.sprite = pg.font.SysFont("consolas", 18).render("IIIIIIII", True, (210,180,140), (139,69,19))
+    self.berths = 1
 
   def newRandomCargo(self):
     if not self.destinations:

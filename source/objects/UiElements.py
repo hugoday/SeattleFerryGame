@@ -222,12 +222,14 @@ class DestinationSelect(UiElement):
         if key == pg.K_SPACE and self.selection == 0:
           return "cargoMenu"
         elif key == pg.K_SPACE and self.selection == 1:
-          #check that a destination is selected
+          # check that a destination is selected
           if not ferry.destination:
             return "destMenu"
           # remove cargo from dock and add to ferry
           for item in ferry.cargo:
             dock.cargo.remove(item)
+          # launch ferry
+          ferry.distanceFromDest = 5
           ferry.depart()
           return "game"
         elif key == pg.K_SPACE:
@@ -254,6 +256,8 @@ class WorldMap(UiElement):
       self.screen.blit(dock.sprite, dock.pos)
 
     # draw ferries
+    for ferry in self.ferries:
+      self.screen.blit(ferry.sprite, ferry.pos)
 
     # draw selector
 

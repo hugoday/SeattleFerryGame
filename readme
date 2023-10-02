@@ -26,7 +26,7 @@ Floating containers?
 
 Boat has maintinence and fuel costs
 
-Dock
+Port
   is
     StaticElement
   has

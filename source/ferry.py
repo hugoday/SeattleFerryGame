@@ -42,33 +42,42 @@ def main():
   clock = pg.time.Clock()
   running = True
   gameState = "startMenu"
-  # gameState = "cargoMenu"
 
   time = 0
+  frames = 1
 
   # if True:
   #   import matplotlib.image as mplimg
   #   mplimg.imsave('name.png', [[[255,0,0],(0,255,0)]])
 
-  startMenu = StartMenu()
-  creditsDisplay = CreditsDisplay()
-
-  docks = [Dock(name) for name in DataAssets.ports]
+  log("Building docks...")
+  docks = [Dock(name) for name in DataAssets.ports[0:2]]
   for dock in docks:
     for dest in docks:
       if dest != dock:
         dock.newDestination(dest)
     for _ in range(8):
       dock.newRandomCargo()
+  
+  docks[0].pos = [100,200]
+  docks[1].pos = [400,200]
+  log("[DONE]")
 
+  log("Building ferries...")
   ferries = [Ferry(docks[0])]
-
+  ferries[0].pos = [docks[0].pos[0], docks[0].pos[1] + 10]
+  log("[DONE]")
+  
+  log("Building UIs...")
+  startMenu = StartMenu()
+  creditsDisplay = CreditsDisplay()
   cargoMenu = CargoSelect()
   destMenu = DestinationSelect()
   worldMap = WorldMap()
   worldMap.docks = docks
+  worldMap.ferries = ferries
+  log("[DONE]")
 
-  allSprites = pg.sprite.RenderPlain((ferries))
   background = pg.Surface(screen.get_size())
   background = background.convert()
   background.fill((0, 0, 153))
@@ -112,7 +121,6 @@ def main():
       startMenu.draw()
     elif gameState == "game":
       screen.blit(background, (0, 0))
-      allSprites.draw(screen)
       worldMap.draw()
       creditsDisplay.draw()
     elif gameState == "quit":
@@ -120,12 +128,18 @@ def main():
 
     pg.display.flip()
 
-    dt = clock.tick(30) / 1000
-    for ferry in ferries:
-      if ferry.moving:
-        ferry.x += 1
-        ferry.y += 1
-        ferry.update()
+    clock.tick(30) / 1000
+    frames += 1
+    if frames % 30 == 0:
+      frames = 0
+      time += 1
+
+      #update every second
+      for ferry in ferries:
+        if ferry.moving:
+          ferry.distanceFromDest -= 1
+          print(ferry.distanceFromDest)
+          ferry.update()
 
 
 pg.quit()

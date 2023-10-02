@@ -12,13 +12,13 @@ class Boat(MovingElement):
 
 class Ferry(MovingElement):
   def __init__(self, dock) -> None:
+    log("New Ferry")
     pg.sprite.Sprite.__init__(self)
-    self.image, self.rect = GameElement.load_image("ferry.png", scale=0.3)
+    self.sprite, self.rect = GameElement.load_image("ferry.png", scale=0.3)
     screen = pg.display.get_surface()
     self.area = screen.get_rect()
-    self.x = 0
-    self.y = 0
-    self.rect.topleft = self.x, self.y
+    self.pos = [0,0]
+    self.rect.topleft = self.pos
     self.cargo = []
     self.destination = None
     self.port = dock
@@ -27,7 +27,13 @@ class Ferry(MovingElement):
     self.capacity = 4
 
   def update(self):
-    self.rect.topleft = self.x, self.y
+    self.pos[0] += 1
+    self.pos[1] += 1
+    # check if arrived
+    if self.distanceFromDest == 0:
+      log("ferry arrived at " + self.destination.name)
+      self.port = self.destination
+      self.moving = False
 
   def addCargo(self, item:Cargo):
     if not item:
