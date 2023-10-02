@@ -1,0 +1,106 @@
+     .~
+    /|
+   /_|\
+ _/__|_\_
+ \__"_"__|;
+
+   .:.
+    |
+
+ __/\__
+ \____/
+
+ __/A__
+ \_o_o_|
+
+       .
+       |\
+     _/]_\_
+  ~~~"~~~~~^~~
+
+       .
+     _,|\_
+  ~~~"~~~~^~~
+
+
+     _____
+   c|□□□□
+     ‾‾‾‾‾
+
+     _.__
+   c[oooo|)
+     ‾'‾‾
+     __._
+   (|oooo]ↄ
+     ‾‾'‾
+     __._
+   (|:[]:|ↄ
+     ‾‾'‾
+     _.__
+    [oooo|>
+     ‾'‾‾
+     __._
+   <|oooo]
+     ‾‾'‾
+
+  _
+ |8|
+ |8|
+  V
+
+  A
+ |8|
+ |8|
+  ‾
+  
+   _
+  [:]
+ [___]
+
+  [o]
+  |-|
+  |-|/.\
+  |_| □ ]
+   _
+  /_\
+ [___] 
+
+   _
+  /□\
+  [n]
+
+   .
+  /|\
+  /|\
+ /_|_\
+   '
+
+  /\
+  /\
+   
+  /^\
+  /^\
+   '
+  /'\
+  /^\
+
+
+
+  
+ Select cargo:
+ Destination         Contents       Payment   Load/Unload
+ ----------------------------------------------
+ East Bay          | Camping gear | $   165 | [  LOAD  ]
+ Mercer Island     | Wine         | $   323 | [ UNLOAD ]
+ Mercer Island     | Salmon       | $   323 | [ UNLOAD ]
+ South Lake Union  | Hot Peppers  | $    73 | [ ------ ]
+ 
+ [ CLOSE ]           [X][X][ ][ ]             [ -----> ]
+ 
+
+
+ Select destination:
+ Desination             Cargo        Bonus     Profit
+ [   Mercer Island  ]   [X][X]       + 5%      $  678
+ [     East Bay     ]
+ [ South Lake Union ]
