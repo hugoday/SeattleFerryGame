@@ -11,8 +11,9 @@ Islands:
     Large reward for full repair
     Will have jobs and deliveries when fixed
 
-Docks
-    Can be upgraded for more jobs, boats
+Ports
+    Can be upgraded for more jobs, docks
+    Each dock can have a ferry
     Upgrade with wood and money
     Maybe profit from bringing wood
 
@@ -33,8 +34,8 @@ Port
     ferry[]
     cargo[]
 
-DockMenu
+PortMenu
   is UiElement
   acts on
-    dock
+    port
     ferry

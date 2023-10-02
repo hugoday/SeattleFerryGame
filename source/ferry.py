@@ -10,29 +10,6 @@ from objects.MovingElements import *
 from objects.StaticElements import *
 import os
 
-def genScene():
-  rnd.seed() #5
-  width = 100
-  height = 50
-  scene = []
-  shore = 15
-  docksH = (rnd.randint(5, 24),rnd.randint(24, 45))
-  docks = [Dock(name, [docksH[i], 0]) for i, name in enumerate(["North", "South"])]
-  dock = 0
-  for h in range(height):
-    line = []
-    shore = abs(shore)
-    if h in docksH:
-      line.extend('l'*(shore-8)+str(docks[dock].name)+'d'*12+'w'*(width-shore-10))
-      docks[dock].pos[1] = shore - 8
-      dock += 1
-    else:
-      line.extend('l'*(shore-1)+'s'+'w'*(width-shore-1))
-    scene.append(line)
-    shore += rnd.randint(-1, 1)
-  return (scene, docks)
-
-
 def main():
   pg.init()
   font = pg.font.SysFont("consolas", 18)
@@ -50,22 +27,22 @@ def main():
   #   import matplotlib.image as mplimg
   #   mplimg.imsave('name.png', [[[255,0,0],(0,255,0)]])
 
-  log("Building docks...")
-  docks = [Dock(name) for name in DataAssets.ports[0:2]]
-  for dock in docks:
-    for dest in docks:
-      if dest != dock:
-        dock.newDestination(dest)
+  log("Building ports...")
+  ports = [Port(name) for name in DataAssets.ports[0:2]]
+  for port in ports:
+    for dest in ports:
+      if dest != port:
+        port.newDestination(dest)
     for _ in range(8):
-      dock.newRandomCargo()
+      port.newRandomCargo()
   
-  docks[0].pos = [100,200]
-  docks[1].pos = [400,200]
+  ports[0].pos = [100,200]
+  ports[1].pos = [400,200]
   log("[DONE]")
 
   log("Building ferries...")
-  ferries = [Ferry(docks[0])]
-  ferries[0].pos = [docks[0].pos[0], docks[0].pos[1] + 10]
+  ferries = [Ferry(ports[0])]
+  ferries[0].pos = [ports[0].pos[0], ports[0].pos[1] + 10]
   log("[DONE]")
   
   log("Building UIs...")
@@ -74,7 +51,7 @@ def main():
   cargoMenu = CargoSelect()
   destMenu = DestinationSelect()
   worldMap = WorldMap()
-  worldMap.docks = docks
+  worldMap.ports = ports
   worldMap.ferries = ferries
   log("[DONE]")
 
@@ -94,10 +71,10 @@ def main():
         gameState = "cargoMenu"
 
       if gameState == "cargoMenu":
-        gameState = cargoMenu.processKeypress(event.key, docks[0], ferries[0])
+        gameState = cargoMenu.processKeypress(event.key, ports[0], ferries[0])
         
       elif gameState == "destMenu":
-        gameState = destMenu.processKeypress(event.key, docks[0], ferries[0])
+        gameState = destMenu.processKeypress(event.key, ports[0], ferries[0])
         
       elif gameState == "startMenu":
        gameState = startMenu.processKeypress(event.key)
@@ -112,10 +89,10 @@ def main():
     # update screen
     if gameState == "cargoMenu":
       screen.fill((0,0,0))
-      cargoMenu.draw(docks[0], ferries[0])
+      cargoMenu.draw(ports[0], ferries[0])
     elif gameState == "destMenu":
       screen.fill((0,0,0))
-      destMenu.draw(docks[0], ferries[0])
+      destMenu.draw(ports[0], ferries[0])
     elif gameState == "startMenu":
       screen.fill((0,0,0))
       startMenu.draw()

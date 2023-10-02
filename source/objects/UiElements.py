@@ -74,7 +74,7 @@ class CargoSelect(UiElement):
     self.colSpacing = [10, 250, 400, 500]
     self.selection = 2 # 0 = close, 1 = next
 
-  def draw(self, dock: Dock, ferry: Ferry):
+  def draw(self, port: Port, ferry: Ferry):
     close  = self.font.render("[  Close  ]", True, (255, 255, 255), (0,0,150) if self.selection == 0 else (0,0,0))
     next   = self.font.render("[  ---->  ]", True, (255, 255, 255), (0,0,150) if self.selection == 1 else (0,0,0))
     
@@ -87,7 +87,7 @@ class CargoSelect(UiElement):
     pg.draw.line(self.screen, (255, 255, 255), (10,65),(6150,65))
 
     # blit cargo
-    for row, item in enumerate(dock.cargo):
+    for row, item in enumerate(port.cargo):
       # print item destination
       self.screen.blit(self.font.render(item.destination.name, True, (255, 255, 255)), ((self.colSpacing[0], 20*row+70)))
 
@@ -107,7 +107,7 @@ class CargoSelect(UiElement):
     # blit loaded graphic
     self.drawFerryLoadingCapacity(ferry)
 
-  def processKeypress(self, key, dock: Dock, ferry: Ferry):
+  def processKeypress(self, key, port: Port, ferry: Ferry):
     # menu navigation
         if key == pg.K_a:
           if self.selection == 1:
@@ -121,11 +121,11 @@ class CargoSelect(UiElement):
             self.selection = 2
         elif key == pg.K_w:
           if self.selection in [0, 1]:
-            self.selection = len(dock.cargo) + 1
+            self.selection = len(port.cargo) + 1
           elif self.selection > 2:
             self.selection -= 1
         elif key == pg.K_s:
-          if self.selection == len(dock.cargo) + 1:
+          if self.selection == len(port.cargo) + 1:
             self.selection = 1
           elif self.selection >= 2:
             self.selection += 1
@@ -137,11 +137,11 @@ class CargoSelect(UiElement):
           return "destMenu"
         elif key == pg.K_SPACE:
           # if loaded, unload
-          if dock.cargo[self.selection-2] in ferry.cargo:
-            ferry.cargo.remove(dock.cargo[self.selection-2])
+          if port.cargo[self.selection-2] in ferry.cargo:
+            ferry.cargo.remove(port.cargo[self.selection-2])
           # not loaded, check if there is space and load
           elif len(ferry.cargo) < ferry.capacity:
-            ferry.cargo.append(dock.cargo[self.selection-2])
+            ferry.cargo.append(port.cargo[self.selection-2])
         return "cargoMenu"
 
 class DestinationSelect(UiElement):
@@ -156,7 +156,7 @@ class DestinationSelect(UiElement):
                     for item in ["Destination", "Cargo", "Bonus", "Profit"]]
     self.selection = 2 # 0 = close, 1 = next
     
-  def draw(self, dock: Dock, ferry: Ferry):
+  def draw(self, port: Port, ferry: Ferry):
     colSpacing = [10, 250, 420, 500]
     close  = self.font.render("[   Back   ]", True, (255, 255, 255), (0,0,150) if self.selection == 0 else (0,0,0))
     next   = self.font.render("[  Depart  ]", True, (255, 255, 255), (0,0,150) if self.selection == 1 else (0,0,0))
@@ -172,7 +172,7 @@ class DestinationSelect(UiElement):
     pg.draw.line(self.screen, (255, 255, 255), (10,65),(6150,65))
 
     # blit ports
-    for row, port in enumerate(dock.destinations):
+    for row, port in enumerate(port.destinations):
       # port names
       text = self.font.render(f"[{port.name:^20}]", True, \
                               (  0,255,  0) if ferry.destination == port else (255,255,255), \
@@ -195,7 +195,7 @@ class DestinationSelect(UiElement):
     # blit loaded graphic
     self.drawFerryLoadingCapacity(ferry)
 
-  def processKeypress(self, key, dock: Dock, ferry: Ferry):
+  def processKeypress(self, key, port: Port, ferry: Ferry):
     # menu navigation
         if key == pg.K_a:
           if self.selection == 1:
@@ -209,11 +209,11 @@ class DestinationSelect(UiElement):
             self.selection = 0
         elif key == pg.K_w:
           if self.selection in [0, 1]:
-            self.selection = len(dock.destinations) + 1
+            self.selection = len(port.destinations) + 1
           elif self.selection > 2:
             self.selection -= 1
         elif key == pg.K_s:
-          if self.selection == len(dock.destinations) + 1:
+          if self.selection == len(port.destinations) + 1:
             self.selection = 0
           elif self.selection >= 2:
             self.selection += 1
@@ -225,15 +225,15 @@ class DestinationSelect(UiElement):
           # check that a destination is selected
           if not ferry.destination:
             return "destMenu"
-          # remove cargo from dock and add to ferry
+          # remove cargo from port and add to ferry
           for item in ferry.cargo:
-            dock.cargo.remove(item)
+            port.cargo.remove(item)
           # launch ferry
           ferry.distanceFromDest = 5
           ferry.depart()
           return "game"
         elif key == pg.K_SPACE:
-          ferry.destination = dock.destinations[self.selection-2]
+          ferry.destination = port.destinations[self.selection-2]
         return "destMenu"
 
 
@@ -244,16 +244,16 @@ class WorldMap(UiElement):
     self.screen = pg.display.get_surface()
     self.font = pg.font.SysFont("consolas", 18)
     self.selection = 0
-    self.docks = []
+    self.ports = []
     self.ferries = []
 
     
   def draw(self):
     # draw landscape
 
-    # draw docks
-    for dock in self.docks:
-      self.screen.blit(dock.sprite, dock.pos)
+    # draw ports
+    for port in self.ports:
+      self.screen.blit(port.sprite, port.pos)
 
     # draw ferries
     for ferry in self.ferries:

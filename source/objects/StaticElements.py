@@ -31,9 +31,9 @@ class RouteLine(StaticElement):
     log("New RouteLine")
     self.image = ["No image"]
 
-class Dock(StaticElement):
+class Port(StaticElement):
   def __init__(self, name):
-    log("New Dock: " + name)
+    log("New Port: " + name)
     self.name = name
     self.destinations = []
     self.cargo: Cargo = []
@@ -52,12 +52,12 @@ class Dock(StaticElement):
                         payment=randint(10,1000)))
     self.cargo.sort(key=lambda x: x.destination.name)
 
-  def newDestination(self, dock):
-    if dock in self.destinations:
-      log("Dock already in destinations", 1)
+  def newDestination(self, port):
+    if port in self.destinations:
+      log("Port already in destinations", 1)
       return
-    if dock == self:
+    if port == self:
       log("Cannot add self to destinations", 1)
       return
-    log("Added " + dock.name + " to " + self.name + " destinations")
-    self.destinations.append(dock)
+    log("Added " + port.name + " to " + self.name + " destinations")
+    self.destinations.append(port)
