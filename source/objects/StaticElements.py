@@ -39,7 +39,7 @@ class Port(StaticElement):
     self.cargo: Cargo = []
     self.ferries = []
     self.pos = [0,0]
-    self.sprite = pg.font.SysFont("consolas", 18).render("IIIIIIII", True, (210,180,140), (139,69,19))
+    self.sprite = pg.font.SysFont("consolas", 18).render(name+"IIII", True, (210,180,140), (139,69,19))
     self.berths = 1
 
   def newRandomCargo(self):

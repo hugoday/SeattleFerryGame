@@ -28,7 +28,7 @@ def main():
   #   mplimg.imsave('name.png', [[[255,0,0],(0,255,0)]])
 
   log("Building ports...")
-  ports = [Port(name) for name in DataAssets.ports[0:2]]
+  ports = [Port(name) for name in DataAssets.ports[0:3]]
   for port in ports:
     for dest in ports:
       if dest != port:
@@ -38,10 +38,11 @@ def main():
   
   ports[0].pos = [100,200]
   ports[1].pos = [400,200]
+  ports[2].pos = [300,300]
   log("[DONE]")
 
   log("Building ferries...")
-  ferries = [Ferry(ports[0])]
+  ferries: Ferry = [Ferry(ports[0])]
   ferries[0].pos = [ports[0].pos[0], ports[0].pos[1] + 10]
   log("[DONE]")
   
@@ -71,10 +72,10 @@ def main():
         gameState = "cargoMenu"
 
       if gameState == "cargoMenu":
-        gameState = cargoMenu.processKeypress(event.key, ports[0], ferries[0])
+        gameState = cargoMenu.processKeypress(event.key, ferries[0].port, ferries[0])
         
       elif gameState == "destMenu":
-        gameState = destMenu.processKeypress(event.key, ports[0], ferries[0])
+        gameState = destMenu.processKeypress(event.key, ferries[0].port, ferries[0])
         
       elif gameState == "startMenu":
        gameState = startMenu.processKeypress(event.key)
@@ -82,17 +83,15 @@ def main():
       elif gameState == "game":
         for ferry in ferries:
           if ferry.distanceFromDest == 0:
-            gameState = cargoMenu
-
-        
+            gameState = "cargoMenu"
 
     # update screen
     if gameState == "cargoMenu":
       screen.fill((0,0,0))
-      cargoMenu.draw(ports[0], ferries[0])
+      cargoMenu.draw(ferries[0].port, ferries[0])
     elif gameState == "destMenu":
       screen.fill((0,0,0))
-      destMenu.draw(ports[0], ferries[0])
+      destMenu.draw(ferries[0].port, ferries[0])
     elif gameState == "startMenu":
       screen.fill((0,0,0))
       startMenu.draw()
@@ -115,9 +114,11 @@ def main():
       for ferry in ferries:
         if ferry.moving:
           ferry.distanceFromDest -= 1
-          print(ferry.distanceFromDest)
           ferry.update()
-
+          # check if arrived
+          if ferry.distanceFromDest == 0:
+            log("ferry arrived at " + ferry.destination.name)
+            creditsDisplay.credits += ferry.arrive()
 
 pg.quit()
 

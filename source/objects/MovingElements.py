@@ -29,11 +29,6 @@ class Ferry(MovingElement):
   def update(self):
     self.pos[0] += 1
     self.pos[1] += 1
-    # check if arrived
-    if self.distanceFromDest == 0:
-      log("ferry arrived at " + self.destination.name)
-      self.port = self.destination
-      self.moving = False
 
   def addCargo(self, item:Cargo):
     if not item:
@@ -49,3 +44,21 @@ class Ferry(MovingElement):
     log("Ferry heading from " + self.port.name + " to " + self.destination.name)
     # self.port = self.destination
     self.moving = True
+
+  def arrive(self):
+    # ferry
+    self.port = self.destination
+    self.moving = False
+    self.pos = [self.port.pos[0], self.port.pos[1] + 10]
+    log("Ferry port set to " + self.port.name)
+
+    # port
+    self.port.ferries.append(self)
+
+    destItems = [item for item in self.cargo if item.destination == self.port]
+    profit = ((len(destItems)-1)*0.05 + 1) * sum(item.payment for item in destItems)
+
+    for item in destItems:
+      self.cargo.remove(item)
+
+    return int(profit)
