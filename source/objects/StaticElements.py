@@ -36,7 +36,7 @@ class Port(StaticElement):
     log("New Port: " + name)
     self.name = name
     self.destinations = []
-    self.cargo: Cargo = []
+    self.cargo = []
     self.ferries = []
     self.pos = [0,0]
     self.sprite = pg.font.SysFont("consolas", 18).render(name+"IIII", True, (210,180,140), (139,69,19))
@@ -50,7 +50,6 @@ class Port(StaticElement):
                         destination=self.destinations[randint(0,len(self.destinations)-1)], \
                         contents=DataAssets.cargoContents[randint(0,len(DataAssets.cargoContents)-1)], \
                         payment=randint(10,1000)))
-    self.cargo.sort(key=lambda x: x.destination.name)
 
   def newDestination(self, port):
     if port in self.destinations:

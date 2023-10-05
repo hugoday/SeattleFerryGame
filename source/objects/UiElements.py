@@ -10,11 +10,11 @@ class UiElement(GameElement):
     log("New UiElement")
     self.font = pg.font.SysFont("consolas", 24)
     self.screen = pg.display.get_surface()
-    
+
   def drawFerryLoadingCapacity(self, ferry: Ferry):
     slotText = "[X]" * len(ferry.cargo) + "[ ]" * (ferry.capacity - len(ferry.cargo))
     text = self.font.render(slotText, True, (255, 255, 255))
-    self.screen.blit(text, text.get_rect(centerx=640 / 2, y=400))
+    self.screen.blit(text, text.get_rect(centerx=1920 / 2, y=400))
 
 class StartMenu(UiElement):
   def __init__(self):
@@ -23,19 +23,19 @@ class StartMenu(UiElement):
     self.font = pg.font.SysFont("consolas", 24)
     self.screen = pg.display.get_surface()
     self.selection = "start"
-    self.title = self.font.render("Seattle Ferry Inc.", True, (255, 255, 255))
+    self.title       = self.font.render("Seattle Ferry Inc.", True, (255, 255, 255))
     self.startButton = self.font.render("Start Game", True, (255, 255, 255))
     self.quitButton  = self.font.render("Quit Game", True, (255, 255, 255))
     self.selector    = self.font.render("[           ]", True, (255, 255, 255))
 
   def draw(self):
-    self.screen.blit(self.title, self.title.get_rect(centerx=640 / 2, y=10))
-    self.screen.blit(self.startButton, self.startButton.get_rect(centerx=640 / 3, y=200))
-    self.screen.blit(self.quitButton, self.quitButton.get_rect(centerx=640 / 3 * 2, y=200))
+    self.screen.blit(self.title, self.title.get_rect(centerx=1920 / 2, y=200))
+    self.screen.blit(self.startButton, self.startButton.get_rect(centerx=1920 / 3, y=400))
+    self.screen.blit(self.quitButton, self.quitButton.get_rect(centerx=1920 / 3 * 2, y=400))
     if self.selection == "start":
-      self.screen.blit(self.selector, self.selector.get_rect(centerx=640 / 3, y=200))
+      self.screen.blit(self.selector, self.selector.get_rect(centerx=1920 / 3, y=400))
     else:
-      self.screen.blit(self.selector, self.selector.get_rect(centerx=640 / 3 * 2, y=200))
+      self.screen.blit(self.selector, self.selector.get_rect(centerx=1920 / 3 * 2, y=400))
 
   def processKeypress(self, key):
     # menu navigation
@@ -43,14 +43,14 @@ class StartMenu(UiElement):
       self.selection = "start"
     elif key == pg.K_d:
       self.selection = "quit"
-    
+
     # menu select
     if key == pg.K_SPACE and self.selection == "start":
       return "game"
     elif key == pg.K_SPACE and self.selection == "quit":
       return "quit"
     return "startMenu"
-    
+
 class CreditsDisplay(UiElement):
   def __init__(self):
     log("New Credits")
@@ -71,55 +71,67 @@ class CargoSelect(UiElement):
     self.font = pg.font.SysFont("consolas", 18)
     self.columns = [self.font.render(item, True, (255, 255, 255))\
                     for item in ["Destination", "Contents", "Payment", "Load/Unload"]]
-    self.colSpacing = [10, 250, 400, 500]
     self.selection = 2 # 0 = close, 1 = next
 
   def draw(self, port: Port, ferry: Ferry):
+    colSpacing = [600, 800, 1000, 1200]
     title = self.font.render(port.name, True, (255, 255, 255))
-    close = self.font.render("[  Close  ]", True, (255, 255, 255), (0,0,150) if self.selection == 0 else (0,0,0))
-    next  = self.font.render("[  ---->  ]", True, (255, 255, 255), (0,0,150) if self.selection == 1 else (0,0,0))
+    close = self.font.render("[  Close  ]", True, (255, 255, 255), (97,165,194) if self.selection == 0 else (1,42,74))
+    next  = self.font.render("[  ---->  ]", True, (255, 255, 255), (97,165,194) if self.selection == 1 else (1,42,74))
     
     # blit header and menu buttons
-    self.screen.blit(title, title.get_rect(centerx=640 / 2, y=10))
-    self.screen.blit(close, close.get_rect(centerx=640 / 5, y=400))
-    self.screen.blit(next,   next.get_rect(centerx=640 / 5 * 4, y=400))
+    self.screen.blit(title, title.get_rect(centerx=1920 / 2, y=10))
+    self.screen.blit(close, close.get_rect(centerx=1920 / 5, y=400))
+    self.screen.blit(next,   next.get_rect(centerx=1920 / 5 * 4, y=400))
     for col, attribute in enumerate(self.columns):
-      self.screen.blit(attribute, (self.colSpacing[col], 50))
+      self.screen.blit(attribute, (colSpacing[col], 50))
     pg.draw.line(self.screen, (255, 255, 255), (10,65),(6150,65))
 
     # blit cargo
-    for row, item in enumerate(port.cargo):
-      self.screen.blit(self.font.render(item.destination.name, True, (255, 255, 255)), ((self.colSpacing[0], 20*row+70)))
-      self.screen.blit(self.font.render(item.contents,         True, (255, 255, 255)), ((self.colSpacing[1], 20*row+70)))
-      self.screen.blit(self.font.render(f"${item.payment:>6}", True, (255, 255, 255)), ((self.colSpacing[2], 20*row+70)))
+    # gather port and current ferry cargo, sort
+    cargo = []
+    cargo.extend(port.cargo)
+    cargo.extend(ferry.cargo)
+    cargo.sort(key=lambda item: item.destination.name + str(item))
+    for row, item in enumerate(cargo):
+      self.screen.blit(self.font.render(item.destination.name, True, (255, 255, 255)), ((colSpacing[0], 20*row+70)))
+      self.screen.blit(self.font.render(item.contents,         True, (255, 255, 255)), ((colSpacing[1], 20*row+70)))
+      self.screen.blit(self.font.render(f"${item.payment:>6}", True, (255, 255, 255)), ((colSpacing[2], 20*row+70)))
 
       # load button logic
       loadText       = "[ UNLOAD ]"  if item in ferry.cargo else "[  LOAD  ]"
       loadColor      = (150,150,150) if item not in ferry.cargo and len(ferry.cargo) == ferry.capacity else (255,255,255)
-      loadBackground = (  0,  0,150) if self.selection-2 == row else ( 0,0,0)
+      loadBackground = (97,165,194) if self.selection-2 == row else (1,42,74)
       text = self.font.render(loadText, True, loadColor, loadBackground)
-      self.screen.blit(text, text.get_rect(centerx=self.colSpacing[3] + self.columns[3].get_width()/2, y=20*row+70))
+      self.screen.blit(text, text.get_rect(centerx=colSpacing[3] + self.columns[3].get_width()/2, y=20*row+70))
 
     # blit loaded graphic
     self.drawFerryLoadingCapacity(ferry)
 
   def processKeypress(self, key, port: Port, ferry: Ferry):
+    cargo = []
+    cargo.extend(port.cargo)
+    cargo.extend(ferry.cargo)
     match(key):
       case(pg.K_a):
-        if   self.selection == 1: self.selection = 0
-        elif self.selection >= 2: self.selection = 1
+        if   self.selection == 1:
+          if cargo: self.selection = 2
+          else:     self.selection = 0
+        elif self.selection >= 2: self.selection = 0
 
       case(pg.K_d):
-        if   self.selection == 0: self.selection = 1
-        elif self.selection == 1: self.selection = 2
+        if   self.selection == 0:
+          if cargo: self.selection = 2
+          else:     self.selection = 1
+        elif self.selection >= 2: self.selection = 1
 
       case(pg.K_w):
-        if   self.selection in [0, 1]:  self.selection = len(port.cargo) + 1
+        if   self.selection in [0, 1]:  self.selection = len(cargo) + 1
         elif self.selection > 2:        self.selection -= 1
 
       case(pg.K_s):
-        if   self.selection == len(port.cargo) + 1:  self.selection = 1
-        elif self.selection >= 2:                    self.selection += 1
+        if   self.selection == len(cargo) + 1:  self.selection = 1
+        elif self.selection >= 2: self.selection += 1
 
       case(pg.K_SPACE):
         if self.selection == 0:
@@ -128,11 +140,14 @@ class CargoSelect(UiElement):
           return "destMenu"
         else:
           # if loaded, unload
-          if port.cargo[self.selection-2] in ferry.cargo:
-            ferry.cargo.remove(port.cargo[self.selection-2])
+          cargo.sort(key=lambda item: item.destination.name + str(item))
+          if cargo[self.selection-2] in ferry.cargo:
+            ferry.cargo.remove(cargo[self.selection-2])
+            port.cargo.append(cargo[self.selection-2])
           # not loaded, check if there is space and load
           elif len(ferry.cargo) < ferry.capacity:
-            ferry.cargo.append(port.cargo[self.selection-2])
+            ferry.cargo.append(cargo[self.selection-2])
+            port.cargo.remove(cargo[self.selection-2])
     return "cargoMenu"
 
 class DestinationSelect(UiElement):
@@ -146,16 +161,16 @@ class DestinationSelect(UiElement):
     self.columns = [self.font.render(item, True, (255, 255, 255))\
                     for item in ["Destination", "Cargo", "Bonus", "Profit"]]
     self.selection = 2 # 0 = close, 1 = next
-    
+
   def draw(self, port: Port, ferry: Ferry):
-    colSpacing = [10, 250, 420, 500]
-    close  = self.font.render("[   Back   ]", True, (255, 255, 255), (0,0,150) if self.selection == 0 else (0,0,0))
-    next   = self.font.render("[  Depart  ]", True, (255, 255, 255), (0,0,150) if self.selection == 1 else (0,0,0))
-    
+    colSpacing = [600, 850, 1100, 1200]
+    close  = self.font.render("[   Back   ]", True, (255, 255, 255), (97,165,194) if self.selection == 0 else (1,42,74))
+    next   = self.font.render("[  Depart  ]", True, (255, 255, 255), (97,165,194) if self.selection == 1 else (1,42,74))
+
     # blit header and menu buttons
-    self.screen.blit(self.title, self.title.get_rect(centerx=640 / 2, y=10))
-    self.screen.blit(close, close.get_rect(centerx=640 / 5, y=400))
-    self.screen.blit(next, next.get_rect(centerx=640 / 5 * 4, y=400))
+    self.screen.blit(self.title, self.title.get_rect(centerx=1920 / 2, y=10))
+    self.screen.blit(close, close.get_rect(centerx=1920 / 5, y=400))
+    self.screen.blit(next, next.get_rect(centerx=1920 / 5 * 4, y=400))
 
     # draw column headers
     for col, attribute in enumerate(self.columns):
@@ -166,7 +181,7 @@ class DestinationSelect(UiElement):
     for row, port in enumerate(port.destinations):
       destination = self.font.render(f"[{port.name:^20}]", True, \
                               (  0,255,  0) if ferry.destination == port else (255,255,255), \
-                              (  0,  0,150) if self.selection-2 == row  else (  0,  0,  0))
+                              ( 97,165,194) if self.selection-2  == row  else (1,42,74))
       self.screen.blit(destination, ((colSpacing[0], 20*row+70)))
 
       destItems = [item for item in ferry.cargo if item.destination == port]
@@ -184,21 +199,21 @@ class DestinationSelect(UiElement):
   def processKeypress(self, key, port: Port, ferry: Ferry):
     match(key):
       case(pg.K_a):
-        if   self.selection == 1: self.selection = 0
-        elif self.selection == 0: self.selection = 2
+        if   self.selection == 1: self.selection = 2
+        elif self.selection >= 2: self.selection = 0
 
       case(pg.K_d):
-        if   self.selection == 0: self.selection = 1
-        elif self.selection >= 2: self.selection = 0
+        if   self.selection == 0: self.selection = 2
+        elif self.selection >= 2: self.selection = 1
 
       case(pg.K_w):
         if   self.selection in [0, 1]:  self.selection = len(port.destinations) + 1
         elif self.selection > 2:        self.selection -= 1
 
       case(pg.K_s):
-        if   self.selection == len(port.destinations) + 1:  self.selection = 0
+        if   self.selection == len(port.destinations) + 1:  self.selection = 1
         elif self.selection >= 2:                           self.selection += 1
-      
+
       case(pg.K_SPACE):
         if self.selection == 0:
           return "cargoMenu"
@@ -206,10 +221,6 @@ class DestinationSelect(UiElement):
           # check that a destination is selected
           if not ferry.destination:
             return "destMenu"
-          # remove cargo from port and add to ferry
-          for item in ferry.cargo:
-            if item in port.cargo:
-              port.cargo.remove(item)
           # launch ferry
           ferry.distanceFromDest = 5
           ferry.depart()
@@ -230,7 +241,6 @@ class WorldMap(UiElement):
     self.ports = []
     self.ferries = []
 
-    
   def draw(self):
     # draw landscape
 

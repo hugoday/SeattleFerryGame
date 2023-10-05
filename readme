@@ -1,29 +1,35 @@
 TODO:
 Create map
+Window size adjust
 Ferry start port selection
 Create sprites
+Ability to select port
+Select ferry from port
+Cargo in port graphic
+Distance calculation and time of travel
+Ferry follows route
 
 Long term ideas:
 Islands:
-    Move back clouds to reveal
-    Have bad dock by default, needs fixing
-    Repairs pay small profit for materials
-    Large reward for full repair
-    Will have jobs and deliveries when fixed
+  Move back clouds to reveal
+  Have bad dock by default, needs fixing
+  Repairs pay small profit for materials
+  Large reward for full repair
+  Will have jobs and deliveries when fixed
 
 Ports
-    Can be upgraded for more jobs, docks
-    Each dock can have a ferry
-    Upgrade with wood and money
-    Maybe profit from bringing wood
+  Can be upgraded for more jobs, docks
+  Each dock can have a ferry
+  Upgrade with wood and money
+  Maybe profit from bringing wood
 
 Shipyard:
-    Buy/build new ships
-    Upgrade speed, efficiency, limited size upgrade
+  Buy/build new ships
+  Upgrade speed, efficiency, limited size upgrade
 
 Have an RPG element to exploration. Can come across story parts
 Floating containers?
-    Get maps, special upgrade items
+  Get maps, special upgrade items
 
 Boat has maintinence and fuel costs
 
@@ -33,6 +39,14 @@ Port
   has
     ferry[]
     cargo[]
+
+Ferry
+  is
+    MovingElements
+  has
+    cargo[]
+    source port
+    destination port
 
 PortMenu
   is UiElement
