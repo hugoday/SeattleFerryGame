@@ -56,6 +56,7 @@ class Port(StaticElement):
     self.ferries = []
     self.pos = [0,0]
     self.berths = 1
+    self.capacity = 10
 
   def newRandomCargo(self):
     if not self.destinations:

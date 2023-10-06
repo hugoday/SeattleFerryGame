@@ -1,15 +1,21 @@
 TODO:
-Job max size and display
+//Job max size and display
+//Custom cargo font
 New jobs on timer
+Layover/staging support
+Change to check layovers
 Ferry start port selection
-Select ferry from port
+Multiple docks in port
+  Add dock number attribute
+  Select dock from port
+  Open dock checking
+  Multiple ferries
+  Updgradable ports
 Cargo in port graphic
 Distance calculation and time of travel
+  Fuel cost
 Ferry follows route
-Updgradable docks
-Create map
 Window size adjust
-Create sprites
 
 Long term ideas:
 Islands:
@@ -20,10 +26,25 @@ Islands:
   Will have jobs and deliveries when fixed
 
 Ports
-  Can be upgraded for more jobs, docks
+  Can be upgraded for more jobs, docks, larger staging area
   Each dock can have a ferry
   Upgrade with wood and money
   Maybe profit from bringing wood
+
+  Jobs
+    Will fill to max job capacity then start replacing randomly
+
+  Staging area
+    Can stage or load cargo from port
+      Stage items without a ship to not discard on random refresh
+    Can move ferry items to/from stage 
+    Can unstage staged items
+      Moved to jobs if space
+      Discarded if no space
+
+  Stage from dock menu or cargo menu?
+  Stage to specific dock or in general?
+  Different size docks for larger boats???
 
 Shipyard:
   Buy/build new ships

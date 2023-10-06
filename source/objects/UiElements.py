@@ -79,11 +79,13 @@ class CargoSelect(UiElement):
     close = self.font.render("[  Close  ]", True, (255, 255, 255), (97,165,194) if self.selection == 0 else (1,42,74))
     next  = self.font.render("[  ---->  ]", True, (255, 255, 255) if ferry else (150,150,150), \
                              (97,165,194) if self.selection == 1 else (1,42,74))
-    
+    jobs = self.font.render(f"Cargo capacity: {len(port.cargo)}/{port.capacity}", True, (255, 255, 255))
+
     # blit header and menu buttons
     self.screen.blit(title, title.get_rect(centerx=1920 / 2, y=10))
     self.screen.blit(close, close.get_rect(centerx=1920 / 5, y=400))
-    self.screen.blit(next,   next.get_rect(centerx=1920 / 5 * 4, y=400))
+    self.screen.blit(next, next.get_rect(centerx=1920 / 5 * 4, y=400))
+    self.screen.blit(jobs, (colSpacing[0], 30))
     for col, attribute in enumerate(self.columns):
       self.screen.blit(attribute, (colSpacing[col], 50))
     pg.draw.line(self.screen, (255, 255, 255), (10,65),(6150,65))
@@ -95,13 +97,16 @@ class CargoSelect(UiElement):
     cargo.extend(ferry.cargo if ferry else [])
     cargo.sort(key=lambda item: item.destination.name + str(item))
     for row, item in enumerate(cargo):
-      self.screen.blit(self.font.render(item.destination.name, True, (255, 255, 255)), ((colSpacing[0], 20*row+70)))
-      self.screen.blit(self.font.render(item.contents,         True, (255, 255, 255)), ((colSpacing[1], 20*row+70)))
+      self.screen.blit(item.font.render(item.destination.name, True, (255, 255, 255)), ((colSpacing[0], 20*row+70)))
+      self.screen.blit(item.font.render(item.contents,         True, (255, 255, 255)), ((colSpacing[1], 20*row+70)))
       self.screen.blit(self.font.render(f"${item.payment:>6}", True, (255, 255, 255)), ((colSpacing[2], 20*row+70)))
 
       # load button logic
-      loadText       = "[ UNLOAD ]"  if ferry and item in ferry.cargo else "[  LOAD  ]"
-      loadColor      = (150,150,150) if not ferry or (item not in ferry.cargo and len(ferry.cargo) == ferry.capacity) else (255,255,255)
+      loadText       = "[ UNLOAD ]" if ferry and item in ferry.cargo else "[  LOAD  ]"
+      loadColor      = (150,150,150)  if not ferry or \
+                                        (item not in ferry.cargo and len(ferry.cargo) == ferry.capacity) or \
+                                        (item in ferry.cargo and len(port.cargo) == port.capacity) \
+                                      else (255,255,255)
       loadBackground = (97,165,194) if self.selection-2 == row else (1,42,74)
       text = self.font.render(loadText, True, loadColor, loadBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[3] + self.columns[3].get_width()/2, y=20*row+70))
@@ -140,13 +145,13 @@ class CargoSelect(UiElement):
         elif self.selection == 1 and ferry:
           return "destMenu"
         elif ferry:
-          # if loaded, unload
           cargo.sort(key=lambda item: item.destination.name + str(item))
-          if cargo[self.selection-2] in ferry.cargo:
+          # if loaded and space in the port, unload
+          if cargo[self.selection-2] in ferry.cargo and len(port.cargo) < port.capacity:
             ferry.cargo.remove(cargo[self.selection-2])
             port.cargo.append(cargo[self.selection-2])
-          # not loaded, check if there is space and load
-          elif len(ferry.cargo) < ferry.capacity:
+          # if not loaded and space in the ferry, load
+          elif cargo[self.selection-2] not in ferry.cargo and len(ferry.cargo) < ferry.capacity:
             ferry.cargo.append(cargo[self.selection-2])
             port.cargo.remove(cargo[self.selection-2])
     return "cargoMenu"

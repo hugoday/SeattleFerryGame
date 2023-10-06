@@ -1,6 +1,7 @@
 from logger import log
 from assets.assets import DataAssets
 from random import randint
+import pygame as pg
 
 class Cargo():
   def __init__(self, \
@@ -13,6 +14,7 @@ class Cargo():
     self.destination = destination
     self.contents = contents #random cargo
     self.payment = payment
+    self.font = pg.font.SysFont("consolas", 18)
     log(f"New Cargo: {contents:^14} from  {source.name:^20} to {destination.name:^20} for {str(payment):<6}")
 
   def setSource(self, source):
