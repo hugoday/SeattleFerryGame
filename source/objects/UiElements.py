@@ -77,7 +77,8 @@ class CargoSelect(UiElement):
     colSpacing = [600, 800, 1000, 1200]
     title = self.font.render(port.name, True, (255, 255, 255))
     close = self.font.render("[  Close  ]", True, (255, 255, 255), (97,165,194) if self.selection == 0 else (1,42,74))
-    next  = self.font.render("[  ---->  ]", True, (255, 255, 255), (97,165,194) if self.selection == 1 else (1,42,74))
+    next  = self.font.render("[  ---->  ]", True, (255, 255, 255) if ferry else (150,150,150), \
+                             (97,165,194) if self.selection == 1 else (1,42,74))
     
     # blit header and menu buttons
     self.screen.blit(title, title.get_rect(centerx=1920 / 2, y=10))
@@ -91,7 +92,7 @@ class CargoSelect(UiElement):
     # gather port and current ferry cargo, sort
     cargo = []
     cargo.extend(port.cargo)
-    cargo.extend(ferry.cargo)
+    cargo.extend(ferry.cargo if ferry else [])
     cargo.sort(key=lambda item: item.destination.name + str(item))
     for row, item in enumerate(cargo):
       self.screen.blit(self.font.render(item.destination.name, True, (255, 255, 255)), ((colSpacing[0], 20*row+70)))
@@ -99,19 +100,19 @@ class CargoSelect(UiElement):
       self.screen.blit(self.font.render(f"${item.payment:>6}", True, (255, 255, 255)), ((colSpacing[2], 20*row+70)))
 
       # load button logic
-      loadText       = "[ UNLOAD ]"  if item in ferry.cargo else "[  LOAD  ]"
-      loadColor      = (150,150,150) if item not in ferry.cargo and len(ferry.cargo) == ferry.capacity else (255,255,255)
+      loadText       = "[ UNLOAD ]"  if ferry and item in ferry.cargo else "[  LOAD  ]"
+      loadColor      = (150,150,150) if not ferry or (item not in ferry.cargo and len(ferry.cargo) == ferry.capacity) else (255,255,255)
       loadBackground = (97,165,194) if self.selection-2 == row else (1,42,74)
       text = self.font.render(loadText, True, loadColor, loadBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[3] + self.columns[3].get_width()/2, y=20*row+70))
 
     # blit loaded graphic
-    self.drawFerryLoadingCapacity(ferry)
+    if ferry: self.drawFerryLoadingCapacity(ferry)
 
   def processKeypress(self, key, port: Port, ferry: Ferry):
     cargo = []
     cargo.extend(port.cargo)
-    cargo.extend(ferry.cargo)
+    cargo.extend(ferry.cargo if ferry else [])
     match(key):
       case(pg.K_a):
         if   self.selection == 1:
@@ -136,9 +137,9 @@ class CargoSelect(UiElement):
       case(pg.K_SPACE):
         if self.selection == 0:
           return "game"
-        elif self.selection == 1:
+        elif self.selection == 1 and ferry:
           return "destMenu"
-        else:
+        elif ferry:
           # if loaded, unload
           cargo.sort(key=lambda item: item.destination.name + str(item))
           if cargo[self.selection-2] in ferry.cargo:
@@ -221,6 +222,7 @@ class DestinationSelect(UiElement):
           # check that a destination is selected
           if not ferry.destination:
             return "destMenu"
+          port.ferries.remove(ferry)
           # launch ferry
           ferry.distanceFromDest = 5
           ferry.depart()
@@ -230,26 +232,49 @@ class DestinationSelect(UiElement):
 
     return "destMenu"
 
-
 class WorldMap(UiElement):
   def __init__(self):
     log("New WorldMap")
     pg.sprite.Sprite.__init__(self)
     self.screen = pg.display.get_surface()
     self.font = pg.font.SysFont("consolas", 18)
-    self.selection = 0
+    self.selection = None
     self.ports = []
     self.ferries = []
+    # self.islands = []
+    self.landscape = Landscape()
 
   def draw(self):
     # draw landscape
+    self.screen.blit(self.landscape.sprite, (0,0))
+    # for island in self.islands:
+    #   self.screen.blit(island.sprite, island.pos)
+    # for island in self.islands:
+    #   self.screen.blit(island.sprite, island.pos)
 
     # draw ports
     for port in self.ports:
-      self.screen.blit(port.sprite, port.pos)
+      selPort = self.font.render(f"[{port.name:^20}]", True, (255,255,255), \
+                                 ( 97,165,194) if self.selection == port else None)
+      self.screen.blit(selPort, (port.pos[0], port.pos[1]-20))
+      # self.screen.blit(port.sprite, port.pos)
 
     # draw ferries
     for ferry in self.ferries:
       self.screen.blit(ferry.sprite, ferry.pos)
 
-    # draw selector
+  def processKeypress(self, key):
+    match(key):
+      case(pg.K_a):
+        self.selection = self.ports[(self.ports.index(self.selection) - 1) % len(self.ports)]
+
+      case(pg.K_d):
+        self.selection = self.ports[(self.ports.index(self.selection) + 1) % len(self.ports)]
+
+      # case(pg.K_w):
+
+      # case(pg.K_s):
+
+      case(pg.K_SPACE):
+        return "cargoMenu"
+    return "game"

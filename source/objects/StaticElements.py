@@ -9,13 +9,26 @@ class StaticElement(GameElement):
 class Landscape(StaticElement):
   def __init__(self):
     log("New Landscape")
-    self.image = StaticAssets.landscape
-  
+    pg.sprite.Sprite.__init__(self)
+    self.sprite, self.rect = GameElement.load_image("islandsMap2.png", scale=1)
+    screen = pg.display.get_surface()
+    self.area = screen.get_rect()
+    self.pos = [0,0]
+
+class Island(StaticElement):
+  def __init__(self):
+    log("New Island")
+    pg.sprite.Sprite.__init__(self)
+    self.sprite, self.rect = GameElement.load_image("island.png", scale=0.8)
+    screen = pg.display.get_surface()
+    self.area = screen.get_rect()
+    self.pos = [0,0]
+
 class Tree(StaticElement):
   def __init__(self, style):
     log("New Tree")
     self.image = ["No image"]
-  
+
 class House(StaticElement):
   def __init__(self, style):
     log("New House")
@@ -34,12 +47,14 @@ class RouteLine(StaticElement):
 class Port(StaticElement):
   def __init__(self, name):
     log("New Port: " + name)
+    pg.sprite.Sprite.__init__(self)
+    self.sprite, self.rect = GameElement.load_image("dock.png", scale=0.8)
+    self.sprite = pg.transform.rotate(self.sprite, 90)
     self.name = name
     self.destinations = []
     self.cargo = []
     self.ferries = []
     self.pos = [0,0]
-    self.sprite = pg.font.SysFont("consolas", 18).render(name+"IIII", True, (210,180,140), (139,69,19))
     self.berths = 1
 
   def newRandomCargo(self):

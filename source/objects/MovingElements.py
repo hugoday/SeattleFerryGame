@@ -11,24 +11,25 @@ class Boat(MovingElement):
     self.image = ["No image"]
 
 class Ferry(MovingElement):
-  def __init__(self, port) -> None:
+  def __init__(self) -> None:
     log("New Ferry")
     pg.sprite.Sprite.__init__(self)
-    self.sprite, self.rect = GameElement.load_image("ferry.png", scale=0.3)
+    self.sprite, self.rect = GameElement.load_image("ferry.png", scale=0.2)
+    # self.sprite = pg.transform.rotate(self.sprite, -90)
     screen = pg.display.get_surface()
     self.area = screen.get_rect()
     self.pos = [0,0]
     self.rect.topleft = self.pos
     self.cargo = []
     self.destination = None
-    self.port = port
+    self.port = None
     self.moving = False
     self.distanceFromDest = 0
     self.capacity = 4
 
   def update(self):
-    self.pos[0] += 1
-    self.pos[1] += 1
+    self.pos[0] -= 2
+    self.pos[1] += 2
 
   def addCargo(self, item:Cargo):
     if not item:
@@ -49,7 +50,7 @@ class Ferry(MovingElement):
     # ferry
     self.port = self.destination
     self.moving = False
-    self.pos = [self.port.pos[0], self.port.pos[1] + 10]
+    self.pos = [self.port.pos[0] - 90, self.port.pos[1] - 90]
     log("Ferry port set to " + self.port.name)
 
     # port

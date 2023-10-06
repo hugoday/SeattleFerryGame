@@ -1,13 +1,15 @@
 TODO:
-Create map
-Window size adjust
+Job max size and display
+New jobs on timer
 Ferry start port selection
-Create sprites
-Ability to select port
 Select ferry from port
 Cargo in port graphic
 Distance calculation and time of travel
 Ferry follows route
+Updgradable docks
+Create map
+Window size adjust
+Create sprites
 
 Long term ideas:
 Islands:
