@@ -52,11 +52,13 @@ class Port(StaticElement):
     self.sprite = pg.transform.rotate(self.sprite, 90)
     self.name = name
     self.destinations = []
-    self.cargo = []
     self.ferries = []
+    self.cargo = []
+    self.stage = []
     self.pos = [0,0]
-    self.berths = 1
-    self.capacity = 10
+    self.docks = 1
+    self.cargoCapacity = 10
+    self.stageCapacity = 4
 
   def newRandomCargo(self):
     if not self.destinations:

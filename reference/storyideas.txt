@@ -1,0 +1,8 @@
+/!\ ANOMALOUS RADAR SIGNATURE DETECTED /!\
+S.C.A.N. RADAR result: Unknown vessel, signature not recognized
+WARNING: Inbound signature on intercept course
+
+/!\ SERENDIPITY ARRAY DISABLED /!\
+All RADAR contacts lost
+RADAR [OFFLINE]
+/!\ PROCEED WITH CAUTION /!\

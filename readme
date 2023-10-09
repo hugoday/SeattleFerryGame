@@ -1,9 +1,4 @@
 TODO:
-//Job max size and display
-//Custom cargo font
-New jobs on timer
-Layover/staging support
-Change to check layovers
 Ferry start port selection
 Multiple docks in port
   Add dock number attribute
@@ -11,7 +6,7 @@ Multiple docks in port
   Open dock checking
   Multiple ferries
   Updgradable ports
-Cargo in port graphic
+  
 Distance calculation and time of travel
   Fuel cost
 Ferry follows route
@@ -35,6 +30,7 @@ Ports
     Will fill to max job capacity then start replacing randomly
 
   Staging area
+    Used for layovers or saving jobs for later
     Can stage or load cargo from port
       Stage items without a ship to not discard on random refresh
     Can move ferry items to/from stage 
@@ -43,8 +39,11 @@ Ports
       Discarded if no space
 
   Stage from dock menu or cargo menu?
+    Cargo menu
   Stage to specific dock or in general?
+    General staging, maybe change with upgraded individual docks
   Different size docks for larger boats???
+    Maybe, save for later
 
 Shipyard:
   Buy/build new ships
@@ -61,6 +60,7 @@ Port
     StaticElement
   has
     ferry[]
+    stage[]
     cargo[]
 
 Ferry

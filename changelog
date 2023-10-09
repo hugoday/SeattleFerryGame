@@ -1,3 +1,9 @@
+Jobs periodically refresh
+Rearranged cargo loading UI
+Added staging support
+Can now abandon cargo from ferry
+Added graphic for cargo capacities
+
 Cargo supports individual fonts
 Added cargo capacity display
 Ports have a cargo capacity

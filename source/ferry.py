@@ -22,13 +22,7 @@ def main():
 
   time = 0
   frames = 1
-
-  # log("Building islands...")
-  # islands: Island = [Island() for _ in range(3)]
-  # islands[0].pos = [200,200]
-  # islands[1].pos = [400,600]
-  # islands[2].pos = [500,150]
-  # log("[DONE]")
+  newJobs = False
 
   log("Building ports...")
   ports = [Port(name) for name in DataAssets.ports[0:3]]
@@ -36,14 +30,10 @@ def main():
     for dest in ports:
       if dest != port:
         port.newDestination(dest)
-    for _ in range(8):
-      port.newRandomCargo()
-  
+
   ports[0].pos = [465,175]
   ports[1].pos = [880,845]
   ports[2].pos = [1688,157]
-  # for i in range(len(ports)):
-    # ports[i].pos = [islands[i].pos[0]+70, islands[i].pos[1]+20]
   log("[DONE]")
 
   log("Building ferries...")
@@ -61,7 +51,6 @@ def main():
   worldMap.ports = ports
   worldMap.ferries = ferries
   worldMap.selection = ports[0]
-  # worldMap.islands = islands
   log("[DONE]")
 
   background = pg.Surface(screen.get_size())
@@ -90,7 +79,7 @@ def main():
       elif gameState == "startMenu":
         gameState = startMenu.processKeypress(event.key)
 
-      elif gameState == "game":
+      elif gameState == "worldMap":
         gameState = worldMap.processKeypress(event.key)
 
     # update screen
@@ -105,21 +94,18 @@ def main():
     elif gameState == "startMenu":
       screen.fill((1,42,74))
       startMenu.draw()
-    elif gameState == "game":
-      # screen.fill((1,73,124))
+    elif gameState == "worldMap":
       worldMap.draw()
       creditsDisplay.draw()
     elif gameState == "quit":
         running = False
 
     pg.display.flip()
-
-    clock.tick(30) / 1000
+    clock.tick(30)
     frames += 1
     if frames % 30 == 0:
       frames = 0
       time += 1
-
       #update every second
       for ferry in ferries:
         if ferry.moving:
@@ -129,6 +115,24 @@ def main():
           if ferry.distanceFromDest == 0:
             log("ferry arrived at " + ferry.destination.name)
             creditsDisplay.credits += ferry.arrive()
+
+    # refresh/new jobs occasionally
+    if time % 10 == 0:
+      newJobs = True
+
+    if newJobs and gameState == "worldMap":
+      for port in ports:
+        # 25% chance of being removed
+        for item in port.cargo:
+          if randint(1,4) == 1: # and isn't special
+            port.cargo.remove(item)
+        # add 1/4 of capacity
+        for _ in range(port.cargoCapacity // 4):
+          if len(port.cargo) == port.cargoCapacity:
+            break
+          port.newRandomCargo()
+        port.cargo.sort(key=lambda item: item.destination.name + str(item))
+      newJobs = False
 
   pg.quit()
 

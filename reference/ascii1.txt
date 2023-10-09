@@ -84,23 +84,64 @@
   /'\
   /^\
 
-
-
-  
  Select cargo:
- Destination         Contents       Payment   Load/Unload
- ----------------------------------------------
- East Bay          | Camping gear | $   165 | [  LOAD  ]
- Mercer Island     | Wine         | $   323 | [ UNLOAD ]
- Mercer Island     | Salmon       | $   323 | [ UNLOAD ]
- South Lake Union  | Hot Peppers  | $    73 | [ ------ ]
- 
- [ CLOSE ]           [X][X][ ][ ]             [ -----> ]
- 
+ Destination         Contents       Payment   Load/Unload  Stage/Unstage
+ ------------------------------------------------------------------------
+ East Bay            Camping gear   $   165    [  LOAD  ]    [  STAGE  ]
+ Mercer Island       Wine           $   323    [  LOAD  ]    [  STAGE  ]
+ Mercer Island       Salmon         $   323    [  LOAD  ]    [  STAGE  ]
+ South Lake Union    Hot Peppers    $    73    [  LOAD  ]    [  STAGE  ]
+ East Bay            Camping gear   $   165    [  LOAD  ]    [ UNSTAGE ]
+ Mercer Island       Salmon         $   323    [  LOAD  ]    [ UNSTAGE ]
+ Mercer Island       Wine           $   323    [  LOAD  ]    [ UNSTAGE ]
+ South Lake Union    Hot Peppers    $    73    [  LOAD  ]    [ UNSTAGE ]
+ South Lake Union    Hot Peppers    $    73    [  LOAD  ]    [ UNSTAGE ]
+ Mercer Island       Wine           $   323    [ UNLOAD ]    [  STAGE  ]    [ ABANDON ]
+ Mercer Island       Salmon         $   323    [ UNLOAD ]    [  STAGE  ]    [ ABANDON ]
+ Mercer Island       Wine           $   323    [ UNLOAD ]    [  STAGE  ]    [ ABANDON ]
+ Mercer Island       Salmon         $   323    [ UNLOAD ]    [  STAGE  ]    [ ABANDON ]
 
+            [ CLOSE ]           [X][X][X][ ]             [ -----> ]
+
+vs
+
+ Destination         Contents       Payment    Load/Unload  Stage/Unstage
+
+ Port cargo:    [X][X][X][X][X][X][ ][ ][ ][ ]
+ East Bay            Camping gear   $   165    [  LOAD  ]    [  STAGE  ]
+ East Bay            Camping gear   $   165    [  LOAD  ]    [  STAGE  ]
+ East Bay            Camping gear   $   165    [  LOAD  ]    [  STAGE  ]
+ Mercer Island       Wine           $   323    [  LOAD  ]    [  STAGE  ]
+ Mercer Island       Salmon         $   323    [  LOAD  ]    [  STAGE  ]
+ South Lake Union    Hot Peppers    $    73    [  LOAD  ]    [  STAGE  ]
+ South Lake Union    Hot Peppers    $    73    [  LOAD  ]    [  STAGE  ]
+
+ Staged cargo:  [X][X][X][X][ ][ ]
+ East Bay            Camping gear   $   165    [  LOAD  ]    [ UNSTAGE ]
+ Mercer Island       Salmon         $   323    [  LOAD  ]    [ UNSTAGE ]
+ Mercer Island       Wine           $   323    [  LOAD  ]    [ UNSTAGE ]
+ South Lake Union    Hot Peppers    $    73    [  LOAD  ]    [ UNSTAGE ]
+ South Lake Union    Hot Peppers    $    73    [  LOAD  ]    [ UNSTAGE ]
+
+
+ Ferry cargo __ [X][X][X][X] __________________________________________________________
+ Mercer Island       Wine           $   323    [ UNLOAD ]    [  STAGE  ]    [ ABANDON ]
+ Mercer Island       Salmon         $   323    [ UNLOAD ]    [  STAGE  ]    [ ABANDON ]
+ Mercer Island       Wine           $   323    [ UNLOAD ]    [  STAGE  ]    [ ABANDON ]
+ Mercer Island       Salmon         $   323    [ UNLOAD ]    [  STAGE  ]    [ ABANDON ]
+
+            [ CLOSE ]                             [ -----> ]
 
  Select destination:
  Desination             Cargo        Bonus     Profit
  [   Mercer Island  ]   [X][X]       + 5%      $  678
  [     East Bay     ]
  [ South Lake Union ]
+
+SHIP MENU             -- STATUS--     --ACTIONS--
+RADAR                 [  ONLINE  ]    
+S.C.A.N.R.            [  OFFLINE ]
+Serendipity Array     [  ACTIVE  ]
+Serendipity Array     [ INACTIVE ]    [ ACTIVATE ]
+Engines               [  ONLINE  ]
+VHF Radio             [ DISABLED ]    [  REPAIR  ]
