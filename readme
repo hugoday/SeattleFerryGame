@@ -1,12 +1,11 @@
 TODO:
 Ferry start port selection
-Multiple docks in port
-  Add dock number attribute
-  Select dock from port
-  Open dock checking
-  Multiple ferries
-  Updgradable ports
-  
+Upgrading
+  Upgradable ports
+    Press E on port to open menu
+  Upgradable ferries
+    Dock at shipyard and select
+
 Distance calculation and time of travel
   Fuel cost
 Ferry follows route
@@ -54,6 +53,11 @@ Floating containers?
   Get maps, special upgrade items
 
 Boat has maintinence and fuel costs
+  Components - issue if damaged
+    Engine - very slow
+    Hull - less storage
+    Navigation - increased fuel cost
+
 
 Port
   is

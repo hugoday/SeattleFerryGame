@@ -5,7 +5,11 @@ import random as rnd
 from pygame.sprite import *
 from assets.assets import *
 from data.data import *
-from objects.UiElements import *
+from objects.UiElements.UiElements import *
+from objects.UiElements.CargoSelect import *
+from objects.UiElements.DestinationSelect import *
+from objects.UiElements.FerrySelect import *
+from objects.UiElements.WorldMap import *
 from objects.MovingElements import *
 from objects.StaticElements import *
 import os
@@ -30,6 +34,7 @@ def main():
     for dest in ports:
       if dest != port:
         port.newDestination(dest)
+    port.docks = 2
 
   ports[0].pos = [465,175]
   ports[1].pos = [880,845]
@@ -37,17 +42,19 @@ def main():
   log("[DONE]")
 
   log("Building ferries...")
-  ferries: Ferry = [Ferry()]
-  ferries[0].destination = ports[0]
-  ferries[0].arrive()
+  ferries: Ferry = [Ferry(name) for name in ["Endurance", "Discovery"]]
+  for i, ferry in enumerate(ferries):
+    ferry.destination = ports[i]
+    ferry.arrive()
   log("[DONE]")
   
   log("Building UIs...")
   startMenu = StartMenu()
   creditsDisplay = CreditsDisplay()
-  cargoMenu = CargoSelect()
-  destMenu = DestinationSelect()
+  cargoSelect = CargoSelect()
+  destinationSelect = DestinationSelect()
   worldMap = WorldMap()
+  ferrySelect = FerrySelect()
   worldMap.ports = ports
   worldMap.ferries = ferries
   worldMap.selection = ports[0]
@@ -65,40 +72,66 @@ def main():
         continue
       if event.key == pg.K_q:
         running = False
-      if event.key == pg.K_m:
-        gameState = "cargoMenu"
 
-      if gameState == "cargoMenu":
-        ferry = worldMap.selection.ferries[0] if worldMap.selection.ferries else None
-        gameState = cargoMenu.processKeypress(event.key, worldMap.selection, ferry)
+      match gameState:
+        case "cargoSelect":
+          if len(worldMap.selection.ferries) > 1:
+            ferry = ferrySelect.selectedFerry
+          elif worldMap.selection.ferries:
+            ferry = worldMap.selection.ferries[0]
+          else:
+            ferry = None
+          gameState = cargoSelect.processKeypress(event.key, worldMap.selection, ferry)
 
-      elif gameState == "destMenu":
-        ferry = worldMap.selection.ferries[0] if worldMap.selection.ferries else None
-        gameState = destMenu.processKeypress(event.key, worldMap.selection, ferry)
+        case "destinationSelect":
+          if len(worldMap.selection.ferries) > 1:
+            ferry = ferrySelect.selectedFerry
+          elif worldMap.selection.ferries:
+            ferry = worldMap.selection.ferries[0]
+          else:
+            ferry = None
+          gameState = destinationSelect.processKeypress(event.key, worldMap.selection, ferry)
 
-      elif gameState == "startMenu":
-        gameState = startMenu.processKeypress(event.key)
+        case "startMenu":
+          gameState = startMenu.processKeypress(event.key)
 
-      elif gameState == "worldMap":
-        gameState = worldMap.processKeypress(event.key)
+        case "worldMap":
+          gameState = worldMap.processKeypress(event.key)
+
+        case "ferrySelect":
+          gameState = ferrySelect.processKeypress(event.key, worldMap.selection)
 
     # update screen
-    if gameState == "cargoMenu":
-      screen.fill((1,42,74))
-      ferry = worldMap.selection.ferries[0] if worldMap.selection.ferries else None
-      cargoMenu.draw(worldMap.selection, ferry)
-    elif gameState == "destMenu":
-      screen.fill((1,42,74))
-      ferry = worldMap.selection.ferries[0] if worldMap.selection.ferries else None
-      destMenu.draw(worldMap.selection, ferry)
-    elif gameState == "startMenu":
-      screen.fill((1,42,74))
-      startMenu.draw()
-    elif gameState == "worldMap":
-      worldMap.draw()
-      creditsDisplay.draw()
-    elif gameState == "quit":
-        running = False
+    match gameState:
+      case "cargoSelect":
+        screen.fill((1,42,74))
+        if len(worldMap.selection.ferries) > 1:
+          ferry = ferrySelect.selectedFerry
+        elif worldMap.selection.ferries:
+          ferry = worldMap.selection.ferries[0]
+        else:
+          ferry = None
+        cargoSelect.draw(worldMap.selection, ferry)
+      case "destinationSelect":
+        screen.fill((1,42,74))
+        if len(worldMap.selection.ferries) > 1:
+          ferry = ferrySelect.selectedFerry
+        elif worldMap.selection.ferries:
+          ferry = worldMap.selection.ferries[0]
+        else:
+          ferry = None
+        destinationSelect.draw(worldMap.selection, ferry)
+      case "startMenu":
+        screen.fill((1,42,74))
+        startMenu.draw()
+      case "worldMap":
+        worldMap.draw()
+        creditsDisplay.draw()
+      case "ferrySelect":
+        screen.fill((1,42,74))
+        ferrySelect.draw(worldMap.selection)
+      case "quit":
+          running = False
 
     pg.display.flip()
     clock.tick(30)

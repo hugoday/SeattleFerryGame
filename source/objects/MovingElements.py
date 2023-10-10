@@ -11,7 +11,7 @@ class Boat(MovingElement):
     self.image = ["No image"]
 
 class Ferry(MovingElement):
-  def __init__(self) -> None:
+  def __init__(self, name="Name") -> None:
     log("New Ferry")
     pg.sprite.Sprite.__init__(self)
     self.sprite, self.rect = GameElement.load_image("ferry.png", scale=0.2)
@@ -26,6 +26,7 @@ class Ferry(MovingElement):
     self.moving = False
     self.distanceFromDest = 0
     self.capacity = 4
+    self.name = name
 
   def update(self):
     self.pos[0] -= 2
