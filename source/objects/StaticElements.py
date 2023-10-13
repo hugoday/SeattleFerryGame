@@ -45,20 +45,31 @@ class RouteLine(StaticElement):
     self.image = ["No image"]
 
 class Port(StaticElement):
-  def __init__(self, name):
+  def __init__(self, name="Port", \
+               ferryCapacityLevels=[1,2,3], cargoCapacityLevels=[8,10,12,14,16], stageCapacityLevels=[4,6,8], \
+               ferryCapacityPrices=[0,10000,20000], cargoCapacityPrices=[0,1000,1200,1400,1600], stageCapacityPrices=[0,6000,8000]):
     log("New Port: " + name)
     pg.sprite.Sprite.__init__(self)
     self.sprite, self.rect = GameElement.load_image("dock.png", scale=0.8)
     self.sprite = pg.transform.rotate(self.sprite, 90)
     self.name = name
+    self.pos = [0,0]
     self.destinations = []
+    # Variable contents
     self.ferries = []
     self.cargo = []
     self.stage = []
-    self.pos = [0,0]
-    self.docks = 1
-    self.cargoCapacity = 10
-    self.stageCapacity = 4
+    # Upgrade progressions
+    self.ferryCapacityLevels = ferryCapacityLevels
+    self.cargoCapacityLevels = cargoCapacityLevels
+    self.stageCapacityLevels = stageCapacityLevels
+    self.ferryCapacityPrices = ferryCapacityPrices
+    self.cargoCapacityPrices = cargoCapacityPrices
+    self.stageCapacityPrices = stageCapacityPrices
+    # Upgradable stats
+    self.ferryCapacity = self.ferryCapacityLevels[0]
+    self.cargoCapacity = self.cargoCapacityLevels[0]
+    self.stageCapacity = self.stageCapacityLevels[0]
 
   def newRandomCargo(self):
     if not self.destinations:

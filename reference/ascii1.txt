@@ -145,3 +145,13 @@ Serendipity Array     [  ACTIVE  ]
 Serendipity Array     [ INACTIVE ]    [ ACTIVATE ]
 Engines               [  ONLINE  ]
 VHF Radio             [ DISABLED ]    [  REPAIR  ]
+
+Port Upgrade:     Current    Next   Max    Price     Upgrade       Level
+Cargo capacity      10        12    16   $  1000   [ UPGRADE ]     [+--]
+Stage capacity       4         6     8   $  2000   [ CONFIRM ]     [---]
+Docks                3         -     3                             [++]
+
+Ferry Upgrade:     Current     Next   Max      Price      Upgrade       Level
+Cargo capacity         5         6      6     $ 15000   [ UPGRADE ]     [+-]
+Speed (kts)            9        10     15     $  5000   [ UPGRADE ]     [++---]
+Efficiency ($/NM)     50        40     30     $  5000   [ CONFIRM ]     [---]

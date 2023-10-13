@@ -10,6 +10,7 @@ from objects.UiElements.CargoSelect import *
 from objects.UiElements.DestinationSelect import *
 from objects.UiElements.FerrySelect import *
 from objects.UiElements.WorldMap import *
+from objects.UiElements.PortUpgrade import *
 from objects.MovingElements import *
 from objects.StaticElements import *
 import os
@@ -34,7 +35,6 @@ def main():
     for dest in ports:
       if dest != port:
         port.newDestination(dest)
-    port.docks = 2
 
   ports[0].pos = [465,175]
   ports[1].pos = [880,845]
@@ -55,6 +55,7 @@ def main():
   destinationSelect = DestinationSelect()
   worldMap = WorldMap()
   ferrySelect = FerrySelect()
+  portUpgrade = PortUpgrade()
   worldMap.ports = ports
   worldMap.ferries = ferries
   worldMap.selection = ports[0]
@@ -101,6 +102,9 @@ def main():
         case "ferrySelect":
           gameState = ferrySelect.processKeypress(event.key, worldMap.selection)
 
+        case "portUpgrade":
+          gameState = portUpgrade.processKeypress(event.key, worldMap.selection)
+
     # update screen
     match gameState:
       case "cargoSelect":
@@ -130,6 +134,9 @@ def main():
       case "ferrySelect":
         screen.fill((1,42,74))
         ferrySelect.draw(worldMap.selection)
+      case "portUpgrade":
+        screen.fill((1,42,74))
+        portUpgrade.draw(worldMap.selection)
       case "quit":
           running = False
 
@@ -147,7 +154,7 @@ def main():
           # check if arrived
           if ferry.distanceFromDest == 0:
             log("ferry arrived at " + ferry.destination.name)
-            creditsDisplay.credits += ferry.arrive()
+            GameData.credits += ferry.arrive()
 
     # refresh/new jobs occasionally
     if time % 10 == 0:

@@ -1,7 +1,7 @@
 from ..GameElements import *
 from logger import log
 from assets.assets import UiAssets
-from data.data import *
+import data
 from ..StaticElements import *
 from ..MovingElements import *
 
@@ -88,8 +88,8 @@ class CreditsDisplay(UiElement):
     pg.sprite.Sprite.__init__(self)
     self.screen = pg.display.get_surface()
     self.font = pg.font.SysFont("consolas", 18)
-    self.credits = 1000
+    # self.credits = 1000
 
   def draw(self):
-    self.creditSprite = self.font.render("$"+str(self.credits), True, (0, 255, 0))
+    self.creditSprite = self.font.render("$"+str(GameData.credits), True, (0, 255, 0))
     self.screen.blit(self.creditSprite, (10, 10))

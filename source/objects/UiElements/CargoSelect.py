@@ -165,7 +165,7 @@ class CargoSelect(UiElement):
 
       case(pg.K_SPACE):
         if cursor.isClose():
-          return "worldMap" if len(port.ferries) == 1 else "ferrySelect"
+          return "worldMap" if len(port.ferries) <= 1 else "ferrySelect"
         elif cursor.isNext() and ferry:
           return "destinationSelect"
         # if loaded and space in the port, unload

@@ -23,10 +23,5 @@ class Cargo():
   def setPayment(self, payment):
     self.payment = payment
 
-  # def toggleLoad(self):
-  #   if self.loaded:
-  #     self.loaded = False
-  #   else:
-  #     self.loaded = True
-
-credits = 1000
+class GameData:
+  credits = 10000

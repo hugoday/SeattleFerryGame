@@ -37,6 +37,9 @@ class WorldMap(UiElement):
       case(pg.K_d):
         self.selection = self.ports[(self.ports.index(self.selection) + 1) % len(self.ports)]
 
+      case(pg.K_e):
+        return "portUpgrade"
+
       # case(pg.K_w):
 
       # case(pg.K_s):

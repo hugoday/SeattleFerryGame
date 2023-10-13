@@ -1,3 +1,8 @@
+Fixed cargo menu close button with no ferry
+Added port upgrade menu
+Port capacities can be upgraded
+Added port leveling data
+
 Added multiple ferries
 Docks can hold more than one ferry
 New ferry selection screen

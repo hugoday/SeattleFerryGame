@@ -30,9 +30,9 @@ class DestinationSelect(UiElement):
     # blit ports
     for row, port in enumerate(port.destinations):
       destColor = (255,255,255)
-      if ferry.destination == port:
+      if ferry.destination == port: # TODO: error, got None ferry here somehow
         destColor = (169,214,229)
-      elif len(port.ferries) == port.docks:
+      elif len(port.ferries) == port.ferryCapacity:
         destColor = (150,150,150)
       destination = self.font.render(f"[{port.name:^20}]", True, destColor, \
                               ( 97,165,194) if self.selection-2  == row  else (1,42,74))
@@ -74,7 +74,7 @@ class DestinationSelect(UiElement):
         if self.selection == 0:
           return "cargoSelect"
         elif self.selection == 1 and ferry.destination:
-          if len(ferry.destination.ferries) == ferry.destination.docks:
+          if len(ferry.destination.ferries) == ferry.destination.ferryCapacity:
             log("Selected port has no available docks")
           else:
             port.ferries.remove(ferry)
@@ -83,7 +83,7 @@ class DestinationSelect(UiElement):
             ferry.depart()
             return "worldMap"
         elif self.selection >= 2:
-          if len(port.destinations[self.selection-2].ferries) == port.destinations[self.selection-2].docks:
+          if len(port.destinations[self.selection-2].ferries) == port.destinations[self.selection-2].ferryCapacity:
             log("Selected port has no available docks")
           if ferry.destination == port.destinations[self.selection-2]:
             ferry.destination = None
