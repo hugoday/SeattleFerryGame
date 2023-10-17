@@ -78,7 +78,7 @@ class Port(StaticElement):
     self.cargo.append(Cargo(source=self, \
                         destination=self.destinations[randint(0,len(self.destinations)-1)], \
                         contents=DataAssets.cargoContents[randint(0,len(DataAssets.cargoContents)-1)], \
-                        payment=randint(10,1000)))
+                        payment=randint(GameData.minCargoPayment,GameData.maxCargoPayment)))
 
   def newDestination(self, port):
     if port in self.destinations:
@@ -89,3 +89,35 @@ class Port(StaticElement):
       return
     log("Added " + port.name + " to " + self.name + " destinations")
     self.destinations.append(port)
+
+  def addCargo(self, item: Cargo):
+    if not item:
+      log("Cannot load empty cargo item", 1)
+      return
+    if len(self.cargo) >= self.cargoCapacity:
+      log("Port cannot hold more cargo", 1)
+      return
+    log("Loaded cargo item into port")
+    self.cargo.append(item)
+    self.cargo.sort(key=lambda item: f"{item.destination.name}{GameData.maxCargoPayment-item.payment:0>4}{item}")
+
+  def hasCargoSpace(self):
+    if len(self.cargo) < self.cargoCapacity:
+      return True
+    return False
+
+  def addStage(self, item: Cargo):
+    if not item:
+      log("Cannot stage empty cargo item", 1)
+      return
+    if len(self.stage) >= self.stageCapacity:
+      log("Port cannot stage more cargo", 1)
+      return
+    log("Loaded cargo item into stage")
+    self.stage.append(item)
+    self.stage.sort(key=lambda item: f"{item.destination.name}{GameData.maxCargoPayment-item.payment:0>4}{item}")
+
+  def hasStageSpace(self):
+    if len(self.stage) < self.stageCapacity:
+      return True
+    return False

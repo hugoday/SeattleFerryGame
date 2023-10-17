@@ -12,7 +12,7 @@ class Cargo():
 
     self.source = source
     self.destination = destination
-    self.contents = contents #random cargo
+    self.contents = contents
     self.payment = payment
     self.font = pg.font.SysFont("consolas", 18)
     # log(f"New Cargo: {contents:^14} from  {source.name:^20} to {destination.name:^20} for {str(payment):<6}")
@@ -25,3 +25,5 @@ class Cargo():
 
 class GameData:
   credits = 10000
+  maxCargoPayment = 1000
+  minCargoPayment = 100

@@ -1,3 +1,8 @@
+Fixed destinationSelect with no ferry bug
+Sorting improvements and optimizations
+Q key exits menus
+Fixed DPI scaling issue
+
 Fixed cargo menu close button with no ferry
 Added port upgrade menu
 Port capacities can be upgraded

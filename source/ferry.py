@@ -16,6 +16,8 @@ from objects.StaticElements import *
 import os
 
 def main():
+  import ctypes
+  ctypes.windll.user32.SetProcessDPIAware()
   pg.init()
   font = pg.font.SysFont("consolas", 18)
   screenWidth = 1920
@@ -71,7 +73,7 @@ def main():
         running = False
       if event.type != pg.KEYDOWN:
         continue
-      if event.key == pg.K_q:
+      if gameState == "worldMap" and event.key == pg.K_q:
         running = False
 
       match gameState:
@@ -118,12 +120,10 @@ def main():
         cargoSelect.draw(worldMap.selection, ferry)
       case "destinationSelect":
         screen.fill((1,42,74))
-        if len(worldMap.selection.ferries) > 1:
+        if len(worldMap.selection.ferries) > 1 and ferrySelect.selectedFerry:
           ferry = ferrySelect.selectedFerry
-        elif worldMap.selection.ferries:
-          ferry = worldMap.selection.ferries[0]
         else:
-          ferry = None
+          ferry = worldMap.selection.ferries[0]
         destinationSelect.draw(worldMap.selection, ferry)
       case "startMenu":
         screen.fill((1,42,74))
@@ -168,10 +168,9 @@ def main():
             port.cargo.remove(item)
         # add 1/4 of capacity
         for _ in range(port.cargoCapacity // 4):
-          if len(port.cargo) == port.cargoCapacity:
-            break
-          port.newRandomCargo()
-        port.cargo.sort(key=lambda item: item.destination.name + str(item))
+          if port.hasCargoSpace():
+            port.newRandomCargo()
+        port.cargo.sort(key=lambda item: f"{item.destination.name}{GameData.maxCargoPayment-item.payment:0>4}{item}")
       newJobs = False
 
   pg.quit()

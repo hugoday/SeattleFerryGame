@@ -30,7 +30,7 @@ class DestinationSelect(UiElement):
     # blit ports
     for row, port in enumerate(port.destinations):
       destColor = (255,255,255)
-      if ferry.destination == port: # TODO: error, got None ferry here somehow
+      if ferry.destination == port:
         destColor = (169,214,229)
       elif len(port.ferries) == port.ferryCapacity:
         destColor = (150,150,150)
@@ -54,6 +54,9 @@ class DestinationSelect(UiElement):
 
   def processKeypress(self, key, port: Port, ferry: Ferry) -> str:
     match(key):
+      case(pg.K_q):
+        return "worldMap"
+
       case(pg.K_a):
         if   self.selection == 1: self.selection = 2
         elif self.selection >= 2: self.selection = 0

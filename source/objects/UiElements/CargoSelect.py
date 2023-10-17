@@ -27,7 +27,7 @@ class CargoSelect(UiElement):
     pg.draw.line(self.screen, (255, 255, 255), (10,65), (1920-10,65))
 
     # cargo section
-    for row, item in enumerate(sorted(port.cargo, key=lambda item: item.destination.name + str(item))):
+    for row, item in enumerate(port.cargo):
       self.screen.blit(item.font.render("[X]", True, (255, 255, 255)), ((colSpacing[0]-40, 20*row+70)))
       self.screen.blit(item.font.render(item.destination.name, True, (255, 255, 255)), ((colSpacing[0], 20*row+70)))
       self.screen.blit(item.font.render(item.contents,         True, (255, 255, 255)), ((colSpacing[1], 20*row+70)))
@@ -44,13 +44,14 @@ class CargoSelect(UiElement):
       stageBackground = (97,165,194)  if cursor.isSelected("port", row, "stage") else (1,42,74)
       text = self.font.render("[  STAGE  ]", True, stageColor, stageBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[4] + columns[4].get_width()/2, y=20*row+70))
+
     for row in range(port.cargoCapacity - len(port.cargo)):
       self.screen.blit(self.font.render("[ ]", True, (255, 255, 255)), ((colSpacing[0] - 40, 20 * (len(port.cargo) + row) + 70)))
 
     # stage section
     stageY = 400
     pg.draw.line(self.screen, (255, 255, 255), (10, stageY-5), (1920-10, stageY-5))
-    for row, item in enumerate(sorted(port.stage, key=lambda item: item.destination.name + str(item))):
+    for row, item in enumerate(port.stage):
       self.screen.blit(item.font.render("[X]", True, (255, 255, 255)), ((colSpacing[0]-40, 20*row+stageY)))
       self.screen.blit(item.font.render(item.destination.name, True, (255, 255, 255)), ((colSpacing[0], 20*row+stageY)))
       self.screen.blit(item.font.render(item.contents,         True, (255, 255, 255)), ((colSpacing[1], 20*row+stageY)))
@@ -67,6 +68,7 @@ class CargoSelect(UiElement):
       stageBackground = (97,165,194)  if cursor.isSelected("stage", row, "stage") else (1,42,74)
       text = self.font.render("[ UNSTAGE ]", True, stageColor, stageBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[4] + columns[4].get_width()/2, y=20*row+stageY))
+
     for row in range(port.stageCapacity - len(port.stage)):
       self.screen.blit(self.font.render("[ ]", True, (255, 255, 255)), ((colSpacing[0] - 40, 20 * (len(port.stage) + row) + stageY)))
 
@@ -75,7 +77,7 @@ class CargoSelect(UiElement):
     # ferry section
     ferryY = 700
     pg.draw.line(self.screen, (255, 255, 255), (10, ferryY-5), (1920-10, ferryY-5))
-    for row, item in enumerate(sorted(ferry.cargo, key=lambda item: item.destination.name + str(item))):
+    for row, item in enumerate(ferry.cargo):
       self.screen.blit(item.font.render("[X]", True, (255, 255, 255)), ((colSpacing[0]-40, 20*row+ferryY)))
       self.screen.blit(item.font.render(item.destination.name, True, (255, 255, 255)), ((colSpacing[0], 20*row+ferryY)))
       self.screen.blit(item.font.render(item.contents,         True, (255, 255, 255)), ((colSpacing[1], 20*row+ferryY)))
@@ -95,12 +97,16 @@ class CargoSelect(UiElement):
       abandonBackground = (97,165,194)  if cursor.isSelected("ferry", row, "abandon") else (1,42,74)
       text = self.font.render("[ ABANDON ]", True, (255,255,255), abandonBackground)
       self.screen.blit(text, (colSpacing[5], 20*row+ferryY))
+
     for row in range(ferry.capacity - len(ferry.cargo)):
       self.screen.blit(self.font.render("[ ]", True, (255, 255, 255)), ((colSpacing[0]-40, 20 * (len(ferry.cargo) + row) + ferryY)))
 
   def processKeypress(self, key, port: Port, ferry: Ferry) -> str:
     cursor = self.cursor
     match(key):
+      case(pg.K_q):
+        return "worldMap"
+
       case(pg.K_a):
         if cursor.isNext(): # next button
           if port.cargo: cursor.toSection("port", 0, "stage") # load option of first port cargo item
@@ -170,35 +176,21 @@ class CargoSelect(UiElement):
           return "destinationSelect"
         # if loaded and space in the port, unload
         if cursor.isSection("port"):
-          if cursor.selection == "load" and ferry and len(ferry.cargo) < ferry.capacity:
-            ferry.cargo.append(port.cargo.pop(cursor.row))
-            ferry.cargo.sort(key=lambda item: item.destination.name + str(item))
-          elif cursor.selection == "stage" and len(port.stage) < port.stageCapacity:
-            port.stage.append(port.cargo.pop(cursor.row))
-            port.stage.sort(key=lambda item: item.destination.name + str(item))
+          if   cursor.selection == "load" and ferry and ferry.hasCargoSpace(): ferry.addCargo(port.cargo.pop(cursor.row))
+          elif cursor.selection == "stage" and port.hasStageSpace():            port.addStage(port.cargo.pop(cursor.row))
           if not port.cargo: cursor.toNext() # TODO: make these go to nearest item?
           cursor.row = min(cursor.row, len(port.cargo)-1)
 
         elif cursor.isSection("stage"):
-          if cursor.selection == "load" and ferry and len(ferry.cargo) < ferry.capacity:
-            ferry.cargo.append(port.stage.pop(cursor.row))
-            ferry.cargo.sort(key=lambda item: item.destination.name + str(item))
-          elif cursor.selection == "stage" and len(port.cargo) < port.cargoCapacity:
-            port.cargo.append(port.stage.pop(cursor.row))
-            port.cargo.sort(key=lambda item: item.destination.name + str(item))
+          if   cursor.selection == "load" and ferry and ferry.hasCargoSpace(): ferry.addCargo(port.stage.pop(cursor.row))
+          elif cursor.selection == "stage" and port.hasCargoSpace():            port.addCargo(port.stage.pop(cursor.row))
           if not port.stage: cursor.toNext()
           cursor.row = min(cursor.row, len(port.stage)-1)
 
         elif cursor.isSection("ferry") and ferry:
-          if cursor.selection == "load" and len(port.cargo) < port.cargoCapacity:
-            port.cargo.append(ferry.cargo.pop(cursor.row))
-            port.cargo.sort(key=lambda item: item.destination.name + str(item))
-          elif cursor.selection == "stage" and len(port.stage) < port.stageCapacity:
-            port.stage.append(ferry.cargo.pop(cursor.row))
-            port.stage.sort(key=lambda item: item.destination.name + str(item))
-          elif cursor.selection == "abandon":
-            ferry.cargo.pop(cursor.row)
-            ferry.cargo.sort(key=lambda item: item.destination.name + str(item))
+          if   cursor.selection == "load"  and port.hasCargoSpace(): port.addCargo(ferry.cargo.pop(cursor.row))
+          elif cursor.selection == "stage" and port.hasStageSpace(): port.addStage(ferry.cargo.pop(cursor.row))
+          elif cursor.selection == "abandon": ferry.cargo.pop(cursor.row)
           if not ferry.cargo: cursor.toNext()
           cursor.row = min(cursor.row, len(ferry.cargo)-1)
 

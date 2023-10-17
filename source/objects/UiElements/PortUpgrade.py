@@ -68,6 +68,9 @@ class PortUpgrade(UiElement):
 
   def processKeypress(self, key, port: Port) -> str:
     match(key):
+      case(pg.K_q):
+        return "worldMap"
+
       case(pg.K_a):
         self.cursor.toClose()
 

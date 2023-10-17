@@ -36,8 +36,17 @@ class Ferry(MovingElement):
     if not item:
       log("Cannot load empty cargo item", 1)
       return
+    if len(self.cargo) >= self.capacity:
+      log("Ferry cannot hold more cargo", 1)
+      return
     log("Loaded cargo item onto ferry")
     self.cargo.append(item)
+    self.cargo.sort(key=lambda item: f"{item.destination.name}{GameData.maxCargoPayment-item.payment:0>4}{item}")
+  
+  def hasCargoSpace(self):
+    if len(self.cargo) < self.capacity:
+      return True
+    return False
 
   def depart(self):
     if not self.destination:
