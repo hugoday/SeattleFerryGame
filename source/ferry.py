@@ -78,22 +78,10 @@ def main():
 
       match gameState:
         case "cargoSelect":
-          if len(worldMap.selection.ferries) > 1:
-            ferry = ferrySelect.selectedFerry
-          elif worldMap.selection.ferries:
-            ferry = worldMap.selection.ferries[0]
-          else:
-            ferry = None
-          gameState = cargoSelect.processKeypress(event.key, worldMap.selection, ferry)
+          gameState = cargoSelect.processKeypress(event.key, worldMap.selection, GameData.uiFerry)
 
         case "destinationSelect":
-          if len(worldMap.selection.ferries) > 1:
-            ferry = ferrySelect.selectedFerry
-          elif worldMap.selection.ferries:
-            ferry = worldMap.selection.ferries[0]
-          else:
-            ferry = None
-          gameState = destinationSelect.processKeypress(event.key, worldMap.selection, ferry)
+          gameState = destinationSelect.processKeypress(event.key, worldMap.selection, GameData.uiFerry)
 
         case "startMenu":
           gameState = startMenu.processKeypress(event.key)
@@ -111,20 +99,10 @@ def main():
     match gameState:
       case "cargoSelect":
         screen.fill((1,42,74))
-        if len(worldMap.selection.ferries) > 1:
-          ferry = ferrySelect.selectedFerry
-        elif worldMap.selection.ferries:
-          ferry = worldMap.selection.ferries[0]
-        else:
-          ferry = None
-        cargoSelect.draw(worldMap.selection, ferry)
+        cargoSelect.draw(worldMap.selection, GameData.uiFerry)
       case "destinationSelect":
         screen.fill((1,42,74))
-        if len(worldMap.selection.ferries) > 1 and ferrySelect.selectedFerry:
-          ferry = ferrySelect.selectedFerry
-        else:
-          ferry = worldMap.selection.ferries[0]
-        destinationSelect.draw(worldMap.selection, ferry)
+        destinationSelect.draw(worldMap.selection, GameData.uiFerry)
       case "startMenu":
         screen.fill((1,42,74))
         startMenu.draw()
@@ -137,6 +115,7 @@ def main():
       case "portUpgrade":
         screen.fill((1,42,74))
         portUpgrade.draw(worldMap.selection)
+
       case "quit":
           running = False
 

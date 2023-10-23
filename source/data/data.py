@@ -27,3 +27,4 @@ class GameData:
   credits = 10000
   maxCargoPayment = 1000
   minCargoPayment = 100
+  uiFerry = None

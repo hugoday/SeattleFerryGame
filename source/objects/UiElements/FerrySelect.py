@@ -8,7 +8,6 @@ class FerrySelect(UiElement):
     self.screen = pg.display.get_surface()
     self.font = pg.font.SysFont("consolas", 18)
     self.selection = 2 # 0 = close, 1 = next
-    self.selectedFerry = None
 
   def draw(self, port: Port) -> None:
     columns = [self.font.render(item, True, (255, 255, 255)) for item in ["Ferry", "Cargo", ]]
@@ -30,7 +29,7 @@ class FerrySelect(UiElement):
     # blit ports
     for row, ferry in enumerate(port.ferries):
       text = self.font.render(f"[{ferry.name:^20}]", True, \
-                              (169,214,229) if self.selectedFerry == ferry else (255,255,255), \
+                              (169,214,229) if GameData.uiFerry == ferry else (255,255,255), \
                               ( 97,165,194) if self.selection-2 == row  else (1,42,74))
       self.screen.blit(text, ((colSpacing[0], 20*row+70)))
       self.screen.blit(self.font.render("[X]" * len(ferry.cargo), True, (255, 255, 255)), ((colSpacing[1], 20*row+70)))
@@ -59,9 +58,9 @@ class FerrySelect(UiElement):
       case(pg.K_SPACE):
         if self.selection == 0:
           return "worldMap"
-        elif self.selection == 1 and self.selectedFerry:
+        elif self.selection == 1 and GameData.uiFerry:
           return "cargoSelect"
         else:
-          self.selectedFerry = port.ferries[self.selection-2]
+          GameData.uiFerry = port.ferries[self.selection-2]
 
     return "ferrySelect"

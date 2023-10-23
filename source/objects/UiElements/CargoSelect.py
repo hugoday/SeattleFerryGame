@@ -34,13 +34,12 @@ class CargoSelect(UiElement):
       self.screen.blit(self.font.render(f"${item.payment:>6}", True, (255, 255, 255)), ((colSpacing[2], 20*row+70)))
 
       # load button logic
-      loadColor = (150,150,150) if not ferry or (item not in ferry.cargo and len(ferry.cargo) == ferry.capacity) \
-                                      else (255,255,255)
+      loadColor = (255,255,255) if ferry and ferry.hasCargoSpace() else (150,150,150)
       loadBackground = (97,165,194) if cursor.isSelected("port", row, "load") else (1,42,74)
       text = self.font.render("[  LOAD  ]", True, loadColor, loadBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[3] + columns[3].get_width()/2, y=20*row+70))
 
-      stageColor      = (150,150,150) if len(port.stage) == port.stageCapacity else (255,255,255)
+      stageColor      = (255,255,255) if port.hasStageSpace() else (150,150,150)
       stageBackground = (97,165,194)  if cursor.isSelected("port", row, "stage") else (1,42,74)
       text = self.font.render("[  STAGE  ]", True, stageColor, stageBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[4] + columns[4].get_width()/2, y=20*row+70))
@@ -58,13 +57,12 @@ class CargoSelect(UiElement):
       self.screen.blit(self.font.render(f"${item.payment:>6}", True, (255, 255, 255)), ((colSpacing[2], 20*row+stageY)))
 
       # load button logic
-      loadColor = (150,150,150) if not ferry or (item not in ferry.cargo and len(ferry.cargo) == ferry.capacity) \
-                                      else (255,255,255)
+      loadColor = (255,255,255) if ferry and ferry.hasCargoSpace() else (150,150,150)
       loadBackground = (97,165,194) if cursor.isSelected("stage", row, "load") else (1,42,74)
       text = self.font.render("[  LOAD  ]", True, loadColor, loadBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[3] + columns[3].get_width()/2, y=20*row+stageY))
 
-      stageColor      = (150,150,150) if len(port.cargo) == port.cargoCapacity else (255,255,255)
+      stageColor      = (255,255,255) if port.hasCargoSpace() else (150,150,150)
       stageBackground = (97,165,194)  if cursor.isSelected("stage", row, "stage") else (1,42,74)
       text = self.font.render("[ UNSTAGE ]", True, stageColor, stageBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[4] + columns[4].get_width()/2, y=20*row+stageY))
@@ -84,12 +82,12 @@ class CargoSelect(UiElement):
       self.screen.blit(self.font.render(f"${item.payment:>6}", True, (255, 255, 255)), ((colSpacing[2], 20*row+ferryY)))
 
       # load button logic
-      loadColor      = (150,150,150) if len(port.cargo) == port.cargoCapacity else (255,255,255)
+      loadColor      = (255,255,255) if port.hasCargoSpace() else (150,150,150)
       loadBackground = (97,165,194)  if cursor.isSelected("ferry", row, "load") else (1,42,74)
       text = self.font.render("[ UNLOAD ]", True, loadColor, loadBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[3] + columns[3].get_width()/2, y=20*row+ferryY))
 
-      stageColor      = (150,150,150) if len(port.stage) == port.stageCapacity else (255,255,255)
+      stageColor      = (255,255,255) if port.hasStageSpace() else (150,150,150)
       stageBackground = (97,165,194)  if cursor.isSelected("ferry", row, "stage") else (1,42,74)
       text = self.font.render("[  STAGE  ]", True, stageColor, stageBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[4] + columns[4].get_width()/2, y=20*row+ferryY))

@@ -45,6 +45,10 @@ class WorldMap(UiElement):
       # case(pg.K_s):
 
       case(pg.K_SPACE):
+        if len(self.selection.ferries) == 1:
+          GameData.uiFerry = self.selection.ferries[0]
+        else:
+          GameData.uiFerry = None
         if len(self.selection.ferries) > 1:
           return "ferrySelect"
         return "cargoSelect"
