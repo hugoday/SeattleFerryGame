@@ -11,13 +11,16 @@ class Boat(MovingElement):
     self.image = ["No image"]
 
 class Ferry(MovingElement):
+  def buildFerries():
+    GameData.ferries = [Ferry(name) for name in ["Endurance", "Discovery"]]
+    for i, ferry in enumerate(GameData.ferries):
+      ferry.destination = GameData.ports[i]
+      ferry.arrive()
+
   def __init__(self, name="Name") -> None:
     log("New Ferry")
     pg.sprite.Sprite.__init__(self)
     self.sprite, self.rect = GameElement.load_image("ferry.png", scale=0.2)
-    # self.sprite = pg.transform.rotate(self.sprite, -90)
-    screen = pg.display.get_surface()
-    self.area = screen.get_rect()
     self.pos = [0,0]
     self.rect.topleft = self.pos
     self.cargo = []
@@ -32,7 +35,7 @@ class Ferry(MovingElement):
     self.pos[0] -= 2
     self.pos[1] += 2
 
-  def addCargo(self, item:Cargo):
+  def addCargo(self, item):
     if not item:
       log("Cannot load empty cargo item", 1)
       return

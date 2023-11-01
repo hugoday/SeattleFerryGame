@@ -32,7 +32,7 @@ class DestinationSelect(UiElement):
       destColor = (255,255,255)
       if ferry.destination == port:
         destColor = (169,214,229)
-      elif len(port.ferries) == port.ferryCapacity:
+      elif len(port.ferries) == port.getFerryCapacity():
         destColor = (150,150,150)
       destination = self.font.render(f"[{port.name:^20}]", True, destColor, \
                               ( 97,165,194) if self.selection-2  == row  else (1,42,74))
@@ -77,7 +77,7 @@ class DestinationSelect(UiElement):
         if self.selection == 0:
           return "cargoSelect"
         elif self.selection == 1 and ferry.destination:
-          if len(ferry.destination.ferries) == ferry.destination.ferryCapacity:
+          if len(ferry.destination.ferries) == ferry.destination.getFerryCapacity():
             log("Selected port has no available docks")
           else:
             port.ferries.remove(ferry)
@@ -86,7 +86,7 @@ class DestinationSelect(UiElement):
             ferry.depart()
             return "worldMap"
         elif self.selection >= 2:
-          if len(port.destinations[self.selection-2].ferries) == port.destinations[self.selection-2].ferryCapacity:
+          if len(port.destinations[self.selection-2].ferries) == port.destinations[self.selection-2].getFerryCapacity():
             log("Selected port has no available docks")
           if ferry.destination == port.destinations[self.selection-2]:
             ferry.destination = None

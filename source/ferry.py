@@ -1,19 +1,23 @@
 import pygame as pg
 from random import randrange as rand
 import random as rnd
+import pickle
+import os
+import copy
 
-from pygame.sprite import *
 from assets.assets import *
 from data.data import *
-from objects.UiElements.UiElements import *
+from data.SaveGame import *
+from objects.MovingElements import *
+from objects.StaticElements import *
 from objects.UiElements.CargoSelect import *
 from objects.UiElements.DestinationSelect import *
 from objects.UiElements.FerrySelect import *
-from objects.UiElements.WorldMap import *
 from objects.UiElements.PortUpgrade import *
-from objects.MovingElements import *
-from objects.StaticElements import *
-import os
+from objects.UiElements.StartMenu import *
+from objects.UiElements.UiElements import *
+from objects.UiElements.WorldMap import *
+from pygame.sprite import *
 
 def main():
   import ctypes
@@ -27,28 +31,11 @@ def main():
   running = True
   gameState = "startMenu"
 
+  saveFound = SaveGame.checkSave()
+
   time = 0
   frames = 1
   newJobs = False
-
-  log("Building ports...")
-  ports = [Port(name) for name in DataAssets.ports[0:3]]
-  for port in ports:
-    for dest in ports:
-      if dest != port:
-        port.newDestination(dest)
-
-  ports[0].pos = [465,175]
-  ports[1].pos = [880,845]
-  ports[2].pos = [1688,157]
-  log("[DONE]")
-
-  log("Building ferries...")
-  ferries: Ferry = [Ferry(name) for name in ["Endurance", "Discovery"]]
-  for i, ferry in enumerate(ferries):
-    ferry.destination = ports[i]
-    ferry.arrive()
-  log("[DONE]")
   
   log("Building UIs...")
   startMenu = StartMenu()
@@ -58,14 +45,7 @@ def main():
   worldMap = WorldMap()
   ferrySelect = FerrySelect()
   portUpgrade = PortUpgrade()
-  worldMap.ports = ports
-  worldMap.ferries = ferries
-  worldMap.selection = ports[0]
   log("[DONE]")
-
-  background = pg.Surface(screen.get_size())
-  background = background.convert()
-  background.fill((0, 0, 153))
 
   while running:
     for event in pg.event.get():
@@ -75,6 +55,8 @@ def main():
         continue
       if gameState == "worldMap" and event.key == pg.K_q:
         running = False
+      if event.key == pg.K_v:
+        SaveGame.saveGame()
 
       match gameState:
         case "cargoSelect":
@@ -84,7 +66,7 @@ def main():
           gameState = destinationSelect.processKeypress(event.key, worldMap.selection, GameData.uiFerry)
 
         case "startMenu":
-          gameState = startMenu.processKeypress(event.key)
+          gameState = startMenu.processKeypress(event.key, worldMap)
 
         case "worldMap":
           gameState = worldMap.processKeypress(event.key)
@@ -105,7 +87,7 @@ def main():
         destinationSelect.draw(worldMap.selection, GameData.uiFerry)
       case "startMenu":
         screen.fill((1,42,74))
-        startMenu.draw()
+        startMenu.draw(saveFound)
       case "worldMap":
         worldMap.draw()
         creditsDisplay.draw()
@@ -115,7 +97,6 @@ def main():
       case "portUpgrade":
         screen.fill((1,42,74))
         portUpgrade.draw(worldMap.selection)
-
       case "quit":
           running = False
 
@@ -126,7 +107,7 @@ def main():
       frames = 0
       time += 1
       #update every second
-      for ferry in ferries:
+      for ferry in GameData.ferries:
         if ferry.moving:
           ferry.distanceFromDest -= 1
           ferry.update()
@@ -140,13 +121,13 @@ def main():
       newJobs = True
 
     if newJobs and gameState == "worldMap":
-      for port in ports:
+      for port in GameData.ports:
         # 25% chance of being removed
         for item in port.cargo:
           if randint(1,4) == 1: # and isn't special
             port.cargo.remove(item)
         # add 1/4 of capacity
-        for _ in range(port.cargoCapacity // 4):
+        for _ in range(port.getCargoCapacity() // 4):
           if port.hasCargoSpace():
             port.newRandomCargo()
         port.cargo.sort(key=lambda item: f"{item.destination.name}{GameData.maxCargoPayment-item.payment:0>4}{item}")

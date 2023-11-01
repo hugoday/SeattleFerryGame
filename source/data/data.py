@@ -1,6 +1,4 @@
 from logger import log
-from assets.assets import DataAssets
-from random import randint
 import pygame as pg
 
 class Cargo():
@@ -8,13 +6,15 @@ class Cargo():
                source="Source", \
                destination="Dest", \
                contents="Empty", \
-               payment=0):
+               payment=0, \
+               fontName="consolas"):
 
     self.source = source
     self.destination = destination
     self.contents = contents
     self.payment = payment
-    self.font = pg.font.SysFont("consolas", 18)
+    self.fontName = fontName
+    self.font = pg.font.SysFont(fontName, 18)
     # log(f"New Cargo: {contents:^14} from  {source.name:^20} to {destination.name:^20} for {str(payment):<6}")
 
   def setSource(self, source):
@@ -28,3 +28,5 @@ class GameData:
   maxCargoPayment = 1000
   minCargoPayment = 100
   uiFerry = None
+  ports = []
+  ferries = []

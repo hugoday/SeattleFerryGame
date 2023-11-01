@@ -1,6 +1,11 @@
-from .GameElements import *
-from assets.assets import StaticAssets
-from data.data import *
+from random import randint
+# from .GameElements import *
+import pygame as pg
+from objects.GameElements import GameElement
+from logger import log
+from assets.assets import DataAssets
+from data.data import Cargo
+from data.data import GameData
 
 class StaticElement(GameElement):
   def __init__(self):
@@ -37,7 +42,6 @@ class House(StaticElement):
 class Bouy(StaticElement):
   def __init__(self, style):
     log("New Bouy")
-    self.image = StaticAssets.markers[0]
 
 class RouteLine(StaticElement):
   def __init__(self):
@@ -45,6 +49,17 @@ class RouteLine(StaticElement):
     self.image = ["No image"]
 
 class Port(StaticElement):
+  def buildPorts():
+    GameData.ports = [Port(name) for name in DataAssets.ports[0:3]]
+    for port in GameData.ports:
+      for dest in GameData.ports:
+        if dest != port:
+          port.newDestination(dest)
+
+    GameData.ports[0].pos = [465,175]
+    GameData.ports[1].pos = [880,845]
+    GameData.ports[2].pos = [1688,157]
+
   def __init__(self, name="Port", \
                ferryCapacityLevels=[1,2,3], cargoCapacityLevels=[8,10,12,14,16], stageCapacityLevels=[4,6,8], \
                ferryCapacityPrices=[0,10000,20000], cargoCapacityPrices=[0,1000,1200,1400,1600], stageCapacityPrices=[0,6000,8000]):
@@ -67,9 +82,18 @@ class Port(StaticElement):
     self.cargoCapacityPrices = cargoCapacityPrices
     self.stageCapacityPrices = stageCapacityPrices
     # Upgradable stats
-    self.ferryCapacity = self.ferryCapacityLevels[0]
-    self.cargoCapacity = self.cargoCapacityLevels[0]
-    self.stageCapacity = self.stageCapacityLevels[0]
+    self.ferryCapacityLevel = 0
+    self.cargoCapacityLevel = 0
+    self.stageCapacityLevel = 0
+
+  def getFerryCapacity(self):
+    return self.ferryCapacityLevels[self.ferryCapacityLevel]
+  
+  def getCargoCapacity(self):
+    return self.cargoCapacityLevels[self.cargoCapacityLevel]
+  
+  def getStageCapacity(self):
+    return self.stageCapacityLevels[self.stageCapacityLevel]
 
   def newRandomCargo(self):
     if not self.destinations:
@@ -90,11 +114,11 @@ class Port(StaticElement):
     log("Added " + port.name + " to " + self.name + " destinations")
     self.destinations.append(port)
 
-  def addCargo(self, item: Cargo):
+  def addCargo(self, item):
     if not item:
       log("Cannot load empty cargo item", 1)
       return
-    if len(self.cargo) >= self.cargoCapacity:
+    if len(self.cargo) >= self.getCargoCapacity():
       log("Port cannot hold more cargo", 1)
       return
     log("Loaded cargo item into port")
@@ -102,15 +126,15 @@ class Port(StaticElement):
     self.cargo.sort(key=lambda item: f"{item.destination.name}{GameData.maxCargoPayment-item.payment:0>4}{item}")
 
   def hasCargoSpace(self):
-    if len(self.cargo) < self.cargoCapacity:
+    if len(self.cargo) < self.getCargoCapacity():
       return True
     return False
 
-  def addStage(self, item: Cargo):
+  def addStage(self, item):
     if not item:
       log("Cannot stage empty cargo item", 1)
       return
-    if len(self.stage) >= self.stageCapacity:
+    if len(self.stage) >= self.getStageCapacity():
       log("Port cannot stage more cargo", 1)
       return
     log("Loaded cargo item into stage")
@@ -118,6 +142,6 @@ class Port(StaticElement):
     self.stage.sort(key=lambda item: f"{item.destination.name}{GameData.maxCargoPayment-item.payment:0>4}{item}")
 
   def hasStageSpace(self):
-    if len(self.stage) < self.stageCapacity:
+    if len(self.stage) < self.getStageCapacity():
       return True
     return False

@@ -44,7 +44,7 @@ class CargoSelect(UiElement):
       text = self.font.render("[  STAGE  ]", True, stageColor, stageBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[4] + columns[4].get_width()/2, y=20*row+70))
 
-    for row in range(port.cargoCapacity - len(port.cargo)):
+    for row in range(port.getCargoCapacity() - len(port.cargo)):
       self.screen.blit(self.font.render("[ ]", True, (255, 255, 255)), ((colSpacing[0] - 40, 20 * (len(port.cargo) + row) + 70)))
 
     # stage section
@@ -67,7 +67,7 @@ class CargoSelect(UiElement):
       text = self.font.render("[ UNSTAGE ]", True, stageColor, stageBackground)
       self.screen.blit(text, text.get_rect(centerx=colSpacing[4] + columns[4].get_width()/2, y=20*row+stageY))
 
-    for row in range(port.stageCapacity - len(port.stage)):
+    for row in range(port.getStageCapacity() - len(port.stage)):
       self.screen.blit(self.font.render("[ ]", True, (255, 255, 255)), ((colSpacing[0] - 40, 20 * (len(port.stage) + row) + stageY)))
 
     if not ferry:

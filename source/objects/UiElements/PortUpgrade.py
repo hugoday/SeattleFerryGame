@@ -14,9 +14,9 @@ class PortUpgrade(UiElement):
     columns = [self.font.render(item, True, (255, 255, 255)) for item in \
                ["Attribute", "Current", "Next", "Max", "Price", "Upgrade", "Level"]]
     colSpacing = [600, 800, 900, 1000, 1100, 1250, 1400]
-    upgrades = [["Cargo Capacity", port.cargoCapacity, port.cargoCapacityLevels, port.cargoCapacityPrices], \
-                ["Stage Capacity", port.stageCapacity, port.stageCapacityLevels, port.stageCapacityPrices], \
-                ["Ferry Capacity",  port.ferryCapacity, port.ferryCapacityLevels, port.ferryCapacityPrices]]
+    upgrades = [["Cargo Capacity", port.getCargoCapacity(), port.cargoCapacityLevels, port.cargoCapacityPrices], \
+                ["Stage Capacity", port.getStageCapacity(), port.stageCapacityLevels, port.stageCapacityPrices], \
+                ["Ferry Capacity",  port.getFerryCapacity(), port.ferryCapacityLevels, port.ferryCapacityPrices]]
     
     title = self.font.render("Port upgrade:", True, (255, 255, 255))
     close = self.font.render("[  Close  ]", True, (255, 255, 255), (97,165,194) if self.cursor.isClose() else (1,42,74))
@@ -41,7 +41,6 @@ class PortUpgrade(UiElement):
       # Attribute
       self.screen.blit(self.font.render(upgrade[0], True, (255, 255, 255)), ((colSpacing[0], 20*row+70)))
       # Current
-      # current = self.font.render(f"{upgrade[1]:>3}", True, (255, 255, 255))
       self.screen.blit(*centerOnColumn(f"{upgrade[1]:>3}", 1))
       # Next
       next = f"{upgrade[2][currentLevel+1]:>3}" if currentLevel < len(upgrade[2])-1 else "---"
@@ -96,37 +95,23 @@ class PortUpgrade(UiElement):
           return "worldMap"
         elif self.cursor.selection == "UPGRADE":
           self.cursor.selection = "CONFIRM"
-        else: # TODO: make this DRY
-          # attr = self.cursor.row
-          # capacities = [port.cargoCapacity, port.stageCapacity, port.ferryCapacity]
-          # levels = [port.cargoCapacityLevels, port.stageCapacityLevels, port.ferryCapacityLevels]
-          # prices = [port.cargoCapacityPrices, port.stageCapacityPrices, port.ferryCapacityPrices]
-          # currentLevel = levels[attr].index(capacities[attr])
-          # if currentLevel < len(levels[attr])-1 and \
-          #       GameData.credits >= prices[attr][currentLevel + 1]:
-          #   capacities[attr] = levels[attr][currentLevel + 1]
-          #   GameData.credits -= prices[attr][currentLevel + 1]
-          #   self.cursor.selection = "UPGRADE"
+        else:
           match self.cursor.row:
             case 0: # Cargo capacity
-                currentLevel = port.cargoCapacityLevels.index(port.cargoCapacity)
-                if currentLevel < len(port.cargoCapacityLevels)-1 and \
-                      GameData.credits >= port.cargoCapacityPrices[currentLevel + 1]:
-                  port.cargoCapacity = port.cargoCapacityLevels[currentLevel + 1]
-                  GameData.credits -= port.cargoCapacityPrices[currentLevel + 1]
+                if port.cargoCapacityLevel < len(port.cargoCapacityLevels) - 1 and \
+                      GameData.credits >= port.cargoCapacityPrices[port.cargoCapacityLevel + 1]:
+                  port.cargoCapacityLevel += 1
+                  GameData.credits -= port.cargoCapacityPrices[port.cargoCapacityLevel]
             case 1: # Stage capacity
-              currentLevel = port.stageCapacityLevels.index(port.stageCapacity)
-              if currentLevel < len(port.stageCapacityLevels)-1 and \
-                    GameData.credits >= port.stageCapacityPrices[currentLevel + 1]:
-                port.stageCapacity = port.stageCapacityLevels[currentLevel + 1]
-                GameData.credits -= port.stageCapacityPrices[currentLevel + 1]
+              if port.stageCapacityLevel < len(port.stageCapacityLevels) - 1 and \
+                    GameData.credits >= port.stageCapacityPrices[port.stageCapacityLevel + 1]:
+                port.stageCapacityLevel += 1
+                GameData.credits -= port.stageCapacityPrices[port.stageCapacityLevel]
             case 2: # Ferry capacity
-              currentLevel = port.ferryCapacityLevels.index(port.ferryCapacity)
-              if currentLevel < len(port.ferryCapacityLevels)-1 and \
-                    GameData.credits >= port.ferryCapacityPrices[currentLevel + 1]:
-                port.ferryCapacity = port.ferryCapacityLevels[currentLevel + 1]
-                GameData.credits -= port.ferryCapacityPrices[currentLevel + 1]
+              if port.ferryCapacityLevel < len(port.ferryCapacityLevels) - 1 and \
+                    GameData.credits >= port.ferryCapacityPrices[port.ferryCapacityLevel + 1]:
+                port.ferryCapacityLevel += 1
+                GameData.credits -= port.ferryCapacityPrices[port.ferryCapacityLevel]
           self.cursor.selection = "UPGRADE"
 
     return "portUpgrade"
-  

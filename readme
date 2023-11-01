@@ -1,15 +1,14 @@
 TODO:
-Ferry start port selection
+Datatype changes, use more hash sets
+
 Upgrading
-  Upgradable ports
-    Make more flexible/pythonic
-      Setting and getting can inject discrepancies if level and capacity
-        are changed independently outside of the upgrade screen
   Upgradable ferries
     Create shipyard
     Dock at shipyard and select
 
 Alert if selected port is full
+
+Ferry start port selection
 
 Distance calculation and time of travel
   Fuel cost

@@ -1,3 +1,7 @@
+Added save game functionality
+Added load option to start menu
+Rebuilt some leveling logic
+
 Fixed destinationSelect with no ferry bug
 Sorting improvements and optimizations
 Q key exits menus
