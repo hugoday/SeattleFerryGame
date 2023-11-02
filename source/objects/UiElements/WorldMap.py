@@ -4,6 +4,7 @@ class WorldMap(UiElement):
   def __init__(self):
     log("New WorldMap")
     pg.sprite.Sprite.__init__(self)
+    self.sprite, self.rect = GameElement.load_image("islandsMap.png", scale=1)
     self.screen = pg.display.get_surface()
     self.font = pg.font.SysFont("consolas", 18)
     self.selection = None
@@ -11,7 +12,7 @@ class WorldMap(UiElement):
 
   def draw(self) -> None:
     # draw landscape
-    self.screen.blit(self.landscape.sprite, (0,0))
+    self.screen.blit(self.sprite, (0,0))
 
     # draw ports
     for port in GameData.ports:
@@ -33,7 +34,8 @@ class WorldMap(UiElement):
         self.selection = GameData.ports[(GameData.ports.index(self.selection) + 1) % len(GameData.ports)]
 
       case(pg.K_e):
-        return "portUpgrade"
+        if self.selection.name != "Shipyard":
+          return "portUpgrade"
 
       # case(pg.K_w):
 
@@ -46,5 +48,7 @@ class WorldMap(UiElement):
           GameData.uiFerry = None
         if len(self.selection.ferries) > 1:
           return "ferrySelect"
+        if self.selection.name == "Shipyard":
+          return "ferryUpgrade"
         return "cargoSelect"
     return "worldMap"

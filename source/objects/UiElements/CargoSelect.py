@@ -96,7 +96,7 @@ class CargoSelect(UiElement):
       text = self.font.render("[ ABANDON ]", True, (255,255,255), abandonBackground)
       self.screen.blit(text, (colSpacing[5], 20*row+ferryY))
 
-    for row in range(ferry.capacity - len(ferry.cargo)):
+    for row in range(ferry.getCargoCapacity() - len(ferry.cargo)):
       self.screen.blit(self.font.render("[ ]", True, (255, 255, 255)), ((colSpacing[0]-40, 20 * (len(ferry.cargo) + row) + ferryY)))
 
   def processKeypress(self, key, port: Port, ferry: Ferry) -> str:
@@ -171,6 +171,7 @@ class CargoSelect(UiElement):
         if cursor.isClose():
           return "worldMap" if len(port.ferries) <= 1 else "ferrySelect"
         elif cursor.isNext() and ferry:
+          GameData.prevUi = "cargoSelect"
           return "destinationSelect"
         # if loaded and space in the port, unload
         if cursor.isSection("port"):

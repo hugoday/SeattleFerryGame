@@ -59,7 +59,10 @@ class FerrySelect(UiElement):
         if self.selection == 0:
           return "worldMap"
         elif self.selection == 1 and GameData.uiFerry:
-          return "cargoSelect"
+          if port.name == "Shipyard":
+            return "ferryUpgrade"
+          else:
+            return "cargoSelect"
         else:
           GameData.uiFerry = port.ferries[self.selection-2]
 

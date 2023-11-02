@@ -45,7 +45,7 @@ class SaveGame():
         item.destination = item.destination.name
       ferryData.append(ferryCopy)
 
-    for port in GameData.ports:
+    for port in GameData.getPorts():
       portCopy = copy.copy(port)
       del portCopy.sprite
       del portCopy._Sprite__g
@@ -67,7 +67,7 @@ class SaveGame():
 
   def loadGame():
     def getPort(name):
-      for port in GameData.ports:
+      for port in GameData.getPorts():
         if port.name == name:
           return port
       return None
@@ -89,7 +89,7 @@ class SaveGame():
                                fontName=item.fontName)
     GameData.ferries = ferries
 
-    for index, port in enumerate(GameData.ports):
+    for index, port in enumerate(GameData.getPorts()):
       port.ferries = [ferry for ferry in ferries if ferry.port.name == port.name]
       port.cargoCapacityLevel = portSaves[index].cargoCapacityLevel
       port.stageCapacityLevel = portSaves[index].stageCapacityLevel

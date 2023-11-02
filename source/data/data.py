@@ -30,3 +30,10 @@ class GameData:
   uiFerry = None
   ports = []
   ferries = []
+  prevUi = ""
+
+  def getPorts():
+    return GameData.ports[0:-1]
+  
+  def getShipyard():
+    return GameData.ports[-1]

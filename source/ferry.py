@@ -14,6 +14,7 @@ from objects.UiElements.CargoSelect import *
 from objects.UiElements.DestinationSelect import *
 from objects.UiElements.FerrySelect import *
 from objects.UiElements.PortUpgrade import *
+from objects.UiElements.FerryUpgrade import *
 from objects.UiElements.StartMenu import *
 from objects.UiElements.UiElements import *
 from objects.UiElements.WorldMap import *
@@ -45,6 +46,7 @@ def main():
   worldMap = WorldMap()
   ferrySelect = FerrySelect()
   portUpgrade = PortUpgrade()
+  ferryUpgrade = FerryUpgrade()
   log("[DONE]")
 
   while running:
@@ -61,21 +63,21 @@ def main():
       match gameState:
         case "cargoSelect":
           gameState = cargoSelect.processKeypress(event.key, worldMap.selection, GameData.uiFerry)
-
         case "destinationSelect":
           gameState = destinationSelect.processKeypress(event.key, worldMap.selection, GameData.uiFerry)
-
         case "startMenu":
           gameState = startMenu.processKeypress(event.key, worldMap)
-
         case "worldMap":
           gameState = worldMap.processKeypress(event.key)
-
         case "ferrySelect":
           gameState = ferrySelect.processKeypress(event.key, worldMap.selection)
-
         case "portUpgrade":
           gameState = portUpgrade.processKeypress(event.key, worldMap.selection)
+        case "ferryUpgrade":
+          gameState = ferryUpgrade.processKeypress(event.key, GameData.uiFerry)
+        case _:
+          log("Unrecognized gamestate:", gameState, level=1)
+
 
     # update screen
     match gameState:
@@ -97,8 +99,13 @@ def main():
       case "portUpgrade":
         screen.fill((1,42,74))
         portUpgrade.draw(worldMap.selection)
+      case "ferryUpgrade":
+        screen.fill((1,42,74))
+        ferryUpgrade.draw(GameData.uiFerry)
       case "quit":
           running = False
+      case _:
+          log("Unrecognized gamestate:", gameState, level=1)
 
     pg.display.flip()
     clock.tick(30)
@@ -121,7 +128,7 @@ def main():
       newJobs = True
 
     if newJobs and gameState == "worldMap":
-      for port in GameData.ports:
+      for port in GameData.getPorts():
         # 25% chance of being removed
         for item in port.cargo:
           if randint(1,4) == 1: # and isn't special

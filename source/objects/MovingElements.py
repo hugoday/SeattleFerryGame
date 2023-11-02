@@ -5,11 +5,6 @@ class MovingElement(GameElement):
   def __init__(self):
     log("New MovingElement")
 
-class Boat(MovingElement):
-  def __init__(self, style):
-    log("New Boat")
-    self.image = ["No image"]
-
 class Ferry(MovingElement):
   def buildFerries():
     GameData.ferries = [Ferry(name) for name in ["Endurance", "Discovery"]]
@@ -17,19 +12,33 @@ class Ferry(MovingElement):
       ferry.destination = GameData.ports[i]
       ferry.arrive()
 
-  def __init__(self, name="Name") -> None:
+  def __init__(self, name="Name", \
+               cargoCapacityLevels=[4,5,6], efficiencyLevels=[1.0,0.9,0.8], \
+               cargoCapacityPrices=[10000,12000,14000], efficiencyPrices=[10000,12000,14000]) -> None:
     log("New Ferry")
     pg.sprite.Sprite.__init__(self)
     self.sprite, self.rect = GameElement.load_image("ferry.png", scale=0.2)
     self.pos = [0,0]
-    self.rect.topleft = self.pos
     self.cargo = []
     self.destination = None
     self.port = None
     self.moving = False
     self.distanceFromDest = 0
-    self.capacity = 4
     self.name = name
+    # Upgrade progressions
+    self.cargoCapacityLevels = cargoCapacityLevels
+    self.efficiencyLevels = efficiencyLevels
+    self.cargoCapacityPrices = cargoCapacityPrices
+    self.efficiencyPrices = efficiencyPrices
+    # Upgradable stats
+    self.cargoCapacityLevel = 0
+    self.efficiencyLevel = 0
+
+  def getCargoCapacity(self):
+    return self.cargoCapacityLevels[self.cargoCapacityLevel]
+
+  def getEfficiency(self):
+    return self.efficiencyLevels[self.efficiencyLevel]
 
   def update(self):
     self.pos[0] -= 2
@@ -39,7 +48,7 @@ class Ferry(MovingElement):
     if not item:
       log("Cannot load empty cargo item", 1)
       return
-    if len(self.cargo) >= self.capacity:
+    if len(self.cargo) >= self.getCargoCapacity():
       log("Ferry cannot hold more cargo", 1)
       return
     log("Loaded cargo item onto ferry")
@@ -47,7 +56,7 @@ class Ferry(MovingElement):
     self.cargo.sort(key=lambda item: f"{item.destination.name}{GameData.maxCargoPayment-item.payment:0>4}{item}")
   
   def hasCargoSpace(self):
-    if len(self.cargo) < self.capacity:
+    if len(self.cargo) < self.getCargoCapacity():
       return True
     return False
 

@@ -15,7 +15,7 @@ class Landscape(StaticElement):
   def __init__(self):
     log("New Landscape")
     pg.sprite.Sprite.__init__(self)
-    self.sprite, self.rect = GameElement.load_image("islandsMap2.png", scale=1)
+    # self.sprite, self.rect = GameElement.load_image("islandsMap2.png", scale=1)
     screen = pg.display.get_surface()
     self.area = screen.get_rect()
     self.pos = [0,0]
@@ -24,7 +24,7 @@ class Island(StaticElement):
   def __init__(self):
     log("New Island")
     pg.sprite.Sprite.__init__(self)
-    self.sprite, self.rect = GameElement.load_image("island.png", scale=0.8)
+    # self.sprite, self.rect = GameElement.load_image("island.png", scale=0.8)
     screen = pg.display.get_surface()
     self.area = screen.get_rect()
     self.pos = [0,0]
@@ -51,14 +51,17 @@ class RouteLine(StaticElement):
 class Port(StaticElement):
   def buildPorts():
     GameData.ports = [Port(name) for name in DataAssets.ports[0:3]]
+    GameData.ports[0].pos = [397,248]
+    GameData.ports[1].pos = [705,674]
+    GameData.ports[2].pos = [1350,122]
+
+    GameData.ports.append(Shipyard())
+    GameData.ports[3].pos = [1670,735]
+
     for port in GameData.ports:
       for dest in GameData.ports:
         if dest != port:
           port.newDestination(dest)
-
-    GameData.ports[0].pos = [465,175]
-    GameData.ports[1].pos = [880,845]
-    GameData.ports[2].pos = [1688,157]
 
   def __init__(self, name="Port", \
                ferryCapacityLevels=[1,2,3], cargoCapacityLevels=[8,10,12,14,16], stageCapacityLevels=[4,6,8], \
@@ -100,7 +103,7 @@ class Port(StaticElement):
       log("No known ports to send cargo to", 1)
       return
     self.cargo.append(Cargo(source=self, \
-                        destination=self.destinations[randint(0,len(self.destinations)-1)], \
+                        destination=self.destinations[randint(0,len(self.destinations)-2)], \
                         contents=DataAssets.cargoContents[randint(0,len(DataAssets.cargoContents)-1)], \
                         payment=randint(GameData.minCargoPayment,GameData.maxCargoPayment)))
 
@@ -145,3 +148,27 @@ class Port(StaticElement):
     if len(self.stage) < self.getStageCapacity():
       return True
     return False
+
+class Shipyard(StaticElement):
+  def __init__(self):
+    log("New Shipyard")
+    pg.sprite.Sprite.__init__(self)
+    self.sprite, self.rect = GameElement.load_image("dock.png", scale=0.8)
+    self.sprite = pg.transform.rotate(self.sprite, 90)
+    self.name = "Shipyard"
+    self.pos = [0,0]
+    self.destinations = []
+    self.ferries = []
+
+  def newDestination(self, port):
+    if port in self.destinations:
+      log("Port already in destinations", 1)
+      return
+    if port == self:
+      log("Cannot add self to destinations", 1)
+      return
+    log("Added " + port.name + " to " + self.name + " destinations")
+    self.destinations.append(port)
+
+  def getFerryCapacity(self):
+    return 3

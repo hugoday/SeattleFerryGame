@@ -1,20 +1,20 @@
 TODO:
-Datatype changes, use more hash sets
+Distance calculation and time of travel
+  Fuel cost
+Ferry follows route
+  Series of waypoints on vertical, horizontal or 45
+  Move one/multiple pixels closer each second
 
-Upgrading
-  Upgradable ferries
-    Create shipyard
-    Dock at shipyard and select
+New graphics
+
+Install packages if not installed on launch
+Datatype changes, use more hash sets
 
 Alert if selected port is full
 
 Ferry start port selection
 
-Distance calculation and time of travel
-  Fuel cost
-Ferry follows route
 Window size adjust
-Save game
 Stats menu
   Net worth
   Total trips

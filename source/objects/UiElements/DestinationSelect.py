@@ -48,7 +48,7 @@ class DestinationSelect(UiElement):
       self.screen.blit(self.font.render(f"${profit:>6.0f}",     True, (255, 255, 255)), ((colSpacing[3], 20*row+70)))
 
     # blit loaded graphic
-    slotText = "[X]" * len(ferry.cargo) + "[ ]" * (ferry.capacity - len(ferry.cargo))
+    slotText = "[X]" * len(ferry.cargo) + "[ ]" * (ferry.getCargoCapacity() - len(ferry.cargo))
     text = self.font.render(slotText, True, (255, 255, 255))
     self.screen.blit(text, text.get_rect(centerx=1920 / 2, y=400))
 
@@ -75,7 +75,7 @@ class DestinationSelect(UiElement):
 
       case(pg.K_SPACE):
         if self.selection == 0:
-          return "cargoSelect"
+          return GameData.prevUi
         elif self.selection == 1 and ferry.destination:
           if len(ferry.destination.ferries) == ferry.destination.getFerryCapacity():
             log("Selected port has no available docks")
