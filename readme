@@ -1,3 +1,13 @@
+Welcome to Seattle Ferry Inc!
+Requirements:
+python3
+pygame
+
+To start game:
+Run python3 ferry.py
+
+Thanks for playing!!!
+
 TODO:
 Distance calculation and time of travel
   Fuel cost
@@ -42,7 +52,7 @@ Ports
     Used for layovers or saving jobs for later
     Can stage or load cargo from port
       Stage items without a ship to not discard on random refresh
-    Can move ferry items to/from stage 
+    Can move ferry items to/from stage
     Can unstage staged items
       Moved to jobs if space
       Discarded if no space
@@ -67,26 +77,3 @@ Boat has maintinence and fuel costs
     Engine - very slow
     Hull - less storage
     Navigation - increased fuel cost
-
-
-Port
-  is
-    StaticElement
-  has
-    ferry[]
-    stage[]
-    cargo[]
-
-Ferry
-  is
-    MovingElements
-  has
-    cargo[]
-    source port
-    destination port
-
-PortMenu
-  is UiElement
-  acts on
-    port
-    ferry

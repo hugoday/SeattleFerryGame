@@ -5,4 +5,3 @@ def log(message, level = 2):
     match level:
       case 1: print("[  ERROR  ]", message)
       case 2: print("[  INFO   ]", message)
-

@@ -54,7 +54,7 @@ class Ferry(MovingElement):
     log("Loaded cargo item onto ferry")
     self.cargo.append(item)
     self.cargo.sort(key=lambda item: f"{item.destination.name}{GameData.maxCargoPayment-item.payment:0>4}{item}")
-  
+
   def hasCargoSpace(self):
     if len(self.cargo) < self.getCargoCapacity():
       return True

@@ -1,11 +1,11 @@
-from random import randint
 # from .GameElements import *
-import pygame as pg
-from objects.GameElements import GameElement
-from logger import log
 from assets.assets import DataAssets
 from data.data import Cargo
 from data.data import GameData
+from logger import log
+from objects.GameElements import GameElement
+from random import randint
+import pygame as pg
 
 class StaticElement(GameElement):
   def __init__(self):
@@ -91,10 +91,10 @@ class Port(StaticElement):
 
   def getFerryCapacity(self):
     return self.ferryCapacityLevels[self.ferryCapacityLevel]
-  
+
   def getCargoCapacity(self):
     return self.cargoCapacityLevels[self.cargoCapacityLevel]
-  
+
   def getStageCapacity(self):
     return self.stageCapacityLevels[self.stageCapacityLevel]
 

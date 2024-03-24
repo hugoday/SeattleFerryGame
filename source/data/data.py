@@ -9,12 +9,12 @@ class Cargo():
                payment=0, \
                fontName="consolas"):
 
-    self.source = source
-    self.destination = destination
     self.contents = contents
-    self.payment = payment
-    self.fontName = fontName
+    self.destination = destination
     self.font = pg.font.SysFont(fontName, 18)
+    self.fontName = fontName
+    self.payment = payment
+    self.source = source
     # log(f"New Cargo: {contents:^14} from  {source.name:^20} to {destination.name:^20} for {str(payment):<6}")
 
   def setSource(self, source):
@@ -34,6 +34,6 @@ class GameData:
 
   def getPorts():
     return GameData.ports[0:-1]
-  
+
   def getShipyard():
     return GameData.ports[-1]

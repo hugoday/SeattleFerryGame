@@ -1,9 +1,8 @@
-import pygame as pg
 from random import randrange as rand
-import random as rnd
-import pickle
+import ctypes
 import os
-import copy
+import pygame as pg
+import random as rnd
 
 from assets.assets import *
 from data.data import *
@@ -13,15 +12,14 @@ from objects.StaticElements import *
 from objects.UiElements.CargoSelect import *
 from objects.UiElements.DestinationSelect import *
 from objects.UiElements.FerrySelect import *
-from objects.UiElements.PortUpgrade import *
 from objects.UiElements.FerryUpgrade import *
+from objects.UiElements.PortUpgrade import *
 from objects.UiElements.StartMenu import *
 from objects.UiElements.UiElements import *
 from objects.UiElements.WorldMap import *
 from pygame.sprite import *
 
 def main():
-  import ctypes
   ctypes.windll.user32.SetProcessDPIAware()
   pg.init()
   font = pg.font.SysFont("consolas", 18)
@@ -37,16 +35,16 @@ def main():
   time = 0
   frames = 1
   newJobs = False
-  
+
   log("Building UIs...")
-  startMenu = StartMenu()
-  creditsDisplay = CreditsDisplay()
   cargoSelect = CargoSelect()
+  creditsDisplay = CreditsDisplay()
   destinationSelect = DestinationSelect()
-  worldMap = WorldMap()
   ferrySelect = FerrySelect()
-  portUpgrade = PortUpgrade()
   ferryUpgrade = FerryUpgrade()
+  portUpgrade = PortUpgrade()
+  startMenu = StartMenu()
+  worldMap = WorldMap()
   log("[DONE]")
 
   while running:
@@ -146,4 +144,8 @@ def main():
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 assetDir = os.path.join(main_dir, "assets")
 
-main()
+try:
+  main()
+except Exception as e:
+  print(e)
+  input()

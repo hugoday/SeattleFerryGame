@@ -1,7 +1,7 @@
 from logger import log
 from pygame.sprite import *
-import pygame as pg
 import os
+import pygame as pg
 
 class GameElement(pg.sprite.Sprite):
   main_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -20,7 +20,7 @@ class GameElement(pg.sprite.Sprite):
   def getPosition(self):
     log("got " + str(self) + " position: " + str(self.position))
     return self.position
-  
+
   def draw(self):
     log("drawing " + str(self) + " at position " + str(self.getPosition()))
     xpos, ypos = self.getPosition()
