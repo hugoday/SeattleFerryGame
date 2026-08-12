@@ -34,12 +34,16 @@ Requires Python 3.10+ and pygame.
 - **Port upgrades** (E from a port) — cargo/stage capacity and docks.
 - **Something in the water** — an unresolved contact appears after a few
   hours near the KNG corridor. Radar and sonar disagree about it.
+- **Save/load** (F5/F9 from the map) — one JSON snapshot
+  (`savegame.json`, git-ignored). Geography is deterministic, so only the
+  clock, the books, the manifests and the hulls go to disk — a hull saved
+  mid-voyage resumes mid-voyage.
 
 ## Controls
 
 | Where | Keys |
 |---|---|
-| Map | arrows pan · -/+ range · A/D select port · SPACE open · E port upgrade · Q quit |
+| Map | arrows pan · -/+ range · A/D select port · SPACE open · E port upgrade · F5 save · F9 load · Q quit |
 | Cargo | WASD move · SPACE act · F cycle vessel · RETURN depart (empty hold allowed) · E upgrade · Q back |
 | Destination | W/S choose · SPACE depart · Q back |
 | Shipyard | TAB section · W/S choose · SPACE act (twice confirms) · RETURN depart selected hull · Q back |
@@ -50,7 +54,7 @@ Requires Python 3.10+ and pygame.
 
 ## Not yet
 
-Save/load, sound, the in-hull tactical view, anomaly encounters that
+Sound, the in-hull tactical view, anomaly encounters that
 develop, island discovery/repair, story. The skeleton is shaped so those
 land in the model layer (`sim.py`) and new views without touching the
 renderer.

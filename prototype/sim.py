@@ -3,12 +3,16 @@
 Money has teeth here: fuel burns per NM continuously, payments scale with
 distance, and every upgrade is a real trade against the fuel bill.
 """
+import json
 import math
+import os
 import random
 from collections import deque
 
 import world
 
+SAVE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'savegame.json')
+SAVE_VERSION = 1
 TIME_SCALE = 0.10            # game-hours per real second
 JOB_PERIOD = 8.0             # hours between job refreshes
 RATE = (26, 55)              # $/NM a shipper pays, per item
@@ -261,3 +265,81 @@ class Game:
         elif self.credits >= 0 and self.in_arrears:
             self.in_arrears = False
             self.log("accounts clear")
+
+    # ---- persistence ------------------------------------------------------
+    # Geography and port layout are deterministic, so a save is only the
+    # mutable state: the clock, the books, every manifest, every hull.
+    # Cargo lives in exactly one list at a time and ports are keyed by code,
+    # which keeps the snapshot flat.
+    def save(self, path=SAVE_PATH):
+        def cargo(lst):
+            return [[c.src.code, c.dest.code, c.contents, c.payment] for c in lst]
+
+        data = dict(
+            version=SAVE_VERSION,
+            t=self.t, credits=self.credits, in_arrears=self.in_arrears,
+            next_jobs=self.next_jobs,
+            events=[list(e) for e in self.events],
+            anomaly=dict(pos=self.anomaly.pos, drift=self.anomaly.drift,
+                         alive=self.anomaly.alive),
+            ports={p.code: dict(lv=p.lv, cargo=cargo(p.cargo),
+                                stage=cargo(p.stage)) for p in self.ports},
+            ferries=[dict(name=f.name, cls=f.cls, lv=f.lv, cargo=cargo(f.cargo),
+                          port=f.port.code, pos=f.pos, heading=list(f.heading),
+                          moving=f.moving,
+                          **(dict(dest=f.dest.code, origin=list(f.origin),
+                                  traveled=f.traveled, trip_len=f.trip_len)
+                             if f.moving else {}))
+                     for f in self.ferries])
+        tmp = path + '.tmp'
+        with open(tmp, 'w') as fp:
+            json.dump(data, fp, indent=1)
+        os.replace(tmp, path)
+
+
+def load(path=SAVE_PATH):
+    """Rebuild a Game from a snapshot. Missing file raises FileNotFoundError;
+    an incompatible save fails loudly rather than half-loading."""
+    with open(path) as fp:
+        data = json.load(fp)
+    if data.get('version') != SAVE_VERSION:
+        raise ValueError(f"save is version {data.get('version')}, "
+                         f"this build reads {SAVE_VERSION}")
+
+    g = Game()
+    by_code = {p.code: p for p in g.ports}
+    for p in g.ports:                     # drop the fresh-game seed state
+        p.cargo.clear(); p.stage.clear(); p.ferries.clear()
+    g.ferries.clear()
+    g.events.clear()
+
+    def cargo(lst):
+        return [Cargo(by_code[s], by_code[d], contents, pay)
+                for s, d, contents, pay in lst]
+
+    g.t, g.credits = data['t'], data['credits']
+    g.in_arrears, g.next_jobs = data['in_arrears'], data['next_jobs']
+    g.events.extend(tuple(e) for e in data['events'])
+    g.anomaly.pos = list(data['anomaly']['pos'])
+    g.anomaly.drift = data['anomaly']['drift']
+    g.anomaly.alive = data['anomaly']['alive']
+    for code, pd in data['ports'].items():
+        p = by_code[code]
+        p.lv.update(pd['lv'])
+        p.cargo = cargo(pd['cargo'])
+        p.stage = cargo(pd['stage'])
+    for fd in data['ferries']:
+        f = Ferry(fd['name'], fd['cls'], by_code[fd['port']])
+        f.lv.update(fd['lv'])
+        f.cargo = cargo(fd['cargo'])
+        f.pos = list(fd['pos'])
+        f.heading = tuple(fd['heading'])
+        if fd['moving']:
+            f.port.ferries.remove(f)      # at sea, not berthed
+            f.moving = True
+            f.dest = by_code[fd['dest']]
+            f.origin = tuple(fd['origin'])
+            f.traveled, f.trip_len = fd['traveled'], fd['trip_len']
+        g.ferries.append(f)
+    g.log("state restored from disk")
+    return g

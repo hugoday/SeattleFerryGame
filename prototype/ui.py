@@ -164,8 +164,8 @@ class MapView:
         total = len(game.ferries) + (1 if game.anomaly.alive else 0)
         if total > len(shown):
             scr.text(1, fy + 2, f'+{total - len(shown)} more', 'd')
-        for i, s in enumerate(('ARROWS PAN  -/+ RANGE', 'A/D SELECT PORT',
-                               'SPACE OPEN  Q QUIT')):
+        for i, s in enumerate(('ARROWS PAN  -/+ RANGE', 'A/D SELECT PORT  SPACE OPEN',
+                               'F5 SAVE  F9 LOAD  Q QUIT')):
             scr.rtext(scr.cols - 2, fy + 1 + i, s, 'c')
         eventline(scr, game)
 
@@ -220,6 +220,11 @@ class MapView:
             return 'shipyard' if p.shipyard else 'cargo'
         elif k == pg.K_e and not game.ports[self.sel].shipyard:
             return 'portupgrade'
+        elif k == pg.K_F5:
+            game.save()
+            game.log("state committed to disk")
+        elif k == pg.K_F9:
+            return 'load'                # main swaps in the restored game
         elif k == pg.K_q:
             return 'quit'
         return 'map'

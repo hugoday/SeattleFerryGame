@@ -9,7 +9,7 @@ import sys
 import pygame as pg
 
 from screen import Screen
-from sim import Game
+import sim
 import ui
 
 THEME = {'map': 'navy', 'cargo': 'dark', 'destination': 'dark',
@@ -29,7 +29,7 @@ def main():
     pg.key.set_repeat(260, 45)
     clock = pg.time.Clock()
 
-    game = Game()
+    game = sim.Game()
     mv = ui.MapView()
     cv = ui.CargoView(mv)
     dv = ui.DestView(mv, cv)
@@ -48,6 +48,12 @@ def main():
                 state = views[state].key(ev.key, game)
                 if state == 'quit':
                     running = False
+                    state = 'map'
+                elif state == 'load':
+                    try:
+                        game = sim.load()
+                    except FileNotFoundError:
+                        game.log("no save on disk", 'a')
                     state = 'map'
 
         game.tick(dt)                       # the world does not pause
