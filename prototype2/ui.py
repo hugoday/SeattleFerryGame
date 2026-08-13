@@ -184,10 +184,10 @@ class MapView:
             if nid in routes.PORTS:
                 continue
             px, py = self.to_cell(scr, *pos)
-            if nid in game.buoys:
-                self._put_map(scr, px, py, '○', 'c')
-            else:
-                self._put_map(scr, px, py, '·', 'd')
+            lit = nid in game.buoys
+            self._put_map(scr, px, py, '○' if lit else '·', 'c' if lit else 'd')
+            # the tender sells them by name; the chart has to answer for it
+            self._text_map(scr, px + 1, py, nid, 'c' if lit else 'd')
         for i, p in enumerate(game.ports):
             px, py = self.to_cell(scr, *p.pos)
             sel = (i == self.sel)
