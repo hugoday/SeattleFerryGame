@@ -8,6 +8,9 @@ is untouched; this one moves time only when you spend it.
     cd prototype2
     python main.py
 
+New to it? `TUTORIAL.md` is the walkthrough — the loop, the screens, and
+what to press when a hull is holding at sea.
+
 Requires Python 3.10+ and pygame. `python checks.py` runs the headless
 behavior suite; `python devshots.py <outdir>` renders every view to PNG;
 `python fuzz.py` hammers the model with random dispatch and asserts
@@ -70,7 +73,9 @@ A ping in earshot reveals the currently honest instrument — briefly.
 There is no confirmation. Up close, the anomaly corrupts hulls and
 **deresolves cargo** — the manifest simply stops agreeing it exists.
 
-**Steer (H, then A/D heading, W/S throttle).** Heading and throttle only.
+**Steer (H, then A/D heading, W/S throttle).** Heading and throttle only,
+read from north like every other bearing on the boat; the CON panel shows
+her heading whether or not you have the helm.
 STOP / SLOW / CRUISE / FLANK: flank is 1.3× cruise but three times as
 loud and blinds a quarter of the radar. The helm refuses to put her
 ashore — breakers ahead means all stop.
@@ -96,16 +101,21 @@ judgment returns to dispatch.
 
 ## Committing a leg
 
-R on the map (or RETURN from cargo ops) opens the commit screen: every
-option quotes exact ticks, exact fuel, and a stability band for the water
-it actually crosses. What is *in* the unstable water is never shown.
+R on the map (or from the in-hull view, or RETURN from cargo ops) opens
+the commit screen: every option quotes exact ticks, exact fuel, and a
+stability band for the water it actually crosses. The destination list
+boxes off how many held contracts each port is owed, the manifest names
+them, and a leg supersedes whatever the helm was doing. Two offers can
+rate the same band — the worst sample caps both, and working out which
+station covers that water is chart work, not something the screen tells
+you. What is *in* the unstable water is never shown.
 
 ## Controls
 
 | Where | Keys |
 |---|---|
-| Map | arrows pan · -/+ range · A/D port · TAB ship · E open · U upgrade · O observe · R route · I in-hull · X abandon · SPACE tick · RETURN run · F5/F9 save/load · Q quit |
-| In-hull | P ping · E read · H helm · A/D heading · W/S throttle · 1/2 power · J rig · TAB next hull · SPACE tick · RETURN run · Q back |
+| Map | arrows pan · -/+ range · A/D port · TAB ship · E open · U upgrade · O observe · R route · I in-hull · X abandon · SPACE tick · RETURN run · F5/F9 save/load · Q quit (stations are named on the chart: `○` lit, `·` dark) |
+| In-hull | P ping · E read · H helm · A/D heading · W/S throttle · 1/2 power · J rig · R route · TAB next hull · SPACE tick · RETURN run · Q back |
 | Cargo | WASD move · SPACE act · F vessel · U upgrade · R repair · RETURN commit leg · Q back |
 | Commit | W/S dest · A/D option · SPACE commit · C circuit · G pause · X abandon · Q back |
 | Repair | W/S choose · SPACE repair (twice) · Q back |
