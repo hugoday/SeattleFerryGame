@@ -41,7 +41,7 @@ def main():
              'repair': ui.RepairView(mv, cv),
              'shipyard': ui.ShipyardView(mv, rv),
              'portupgrade': ui.PortUpgradeView(mv),
-             'inhull': ui.InHullView(mv)}
+             'inhull': ui.InHullView(mv, rv)}
     state = 'map'
     running = True
     auto_run = False

@@ -1275,8 +1275,9 @@ class InHullView:
     CX, CY = 31, 16              # scope center cell
     SW, SH = 62, 28              # scope extent in cells
 
-    def __init__(self, mapview):
+    def __init__(self, mapview, routeview=None):
         self.mv = mapview
+        self.rv = routeview           # so R can hand off to the commit screen
         self.ship_name = None
         self.sweep = 0.0
         self.rays = {}               # deg -> (stamp, [(wx, wy)] land points)
@@ -1443,7 +1444,7 @@ class InHullView:
         scr.hline(0, scr.rows - 3, scr.cols, '═', 'c')
         scr.text(2, scr.rows - 2,
                  'P PING  E READ  H HELM  A/D HDG  W/S THR  1/2 PWR  J RIG  '
-                 'TAB HULL  SPACE/RETURN TIME  Q', 'c')
+                 'R ROUTE  TAB HULL  SPACE/RETURN TIME  Q', 'c')
         eventline(scr, game)
 
     def _panels(self, scr, game, f, now):
@@ -1565,6 +1566,10 @@ class InHullView:
         if f is None or f.derelict:
             return 'inhull'
         thr = f.throttle()
+        if k == pg.K_r:                       # hand her back a destination
+            if self.rv is not None:
+                self.rv.back = 'inhull'
+            return 'route'
         if k == pg.K_p:
             self.ping(game, self.mv.anim)
         elif k == pg.K_e:
