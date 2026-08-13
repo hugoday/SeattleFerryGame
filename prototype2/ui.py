@@ -92,7 +92,7 @@ def ship_status(f, game):
         return (f"rigging {f.queue[0]['comp']}", 'a')
     if f.circuit and f.circuit.get('paused'):
         return ('circuit PAUSED -- holding', 'a')
-    return ('HOLDING in open water', 'a')
+    return ('HOLDING at sea', 'a')      # must fit the map's 31-char contact
 
 
 # ======================================================================= map
@@ -1497,6 +1497,12 @@ class InHullView:
 
         st, sfg = ship_status(f, game)
         scr.text(PX + 2, scr.rows - 5, st, sfg)
+        for i, k in enumerate(COMPONENTS):
+            v = f.components[k]
+            x = PX + 2 + i * 12
+            scr.text(x, scr.rows - 4, k, 'c')
+            scr.rtext(x + 6, scr.rows - 4, str(v),
+                      'g' if v > 60 else ('a' if v >= 30 else 'm'))
 
     def _bearing_line(self, scr, th, sx, sy, r, fg):
         d_nm = 1.2
