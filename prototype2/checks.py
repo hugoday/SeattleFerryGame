@@ -281,7 +281,19 @@ def check_helm():
         if f.queue[0]['thr'] == 0:
             break
     assert f.queue[0]['thr'] == 0, "the helm must stop at breakers"
-    print("  helm: moves, flank is loud, breakers stop her OK")
+    # a committed leg supersedes the helm -- it must not queue behind it
+    g = fresh(111)
+    f = g.ships[0]
+    f.pos = list(routes.NODES['B4'])
+    f.set_helm(0, 2, g)
+    opts = routes.options('B4', 'KNG', g.water_for(f))
+    f.enqueue_leg(opts[0], 'KNG', g)
+    assert [o['kind'] for o in f.queue] == ['leg'], \
+        f"a leg must secure the helm, queue was {[o['kind'] for o in f.queue]}"
+    sail(g, f)
+    assert f.port is g.port('KNG'), "she must actually make the port"
+    print("  helm: moves, flank is loud, breakers stop her, "
+          "a leg supersedes her OK")
 
 
 # 12. manage: powered-down systems ride it out; the hull never can ----------

@@ -230,7 +230,15 @@ class Ship:
         return arr[self.lv[k]] if self.lv[k] < len(arr) else None
 
     # ---- orders ---------------------------------------------------------
+    def _secure_helm(self, game):
+        """A committed order supersedes the helm. A helm order stands until
+        it is dropped, so a leg queued behind one would never be sailed."""
+        if self.queue and self.queue[0]['kind'] == 'helm':
+            self.queue.pop(0)
+            game.log(f"{self.name} helm secured -- she has her orders")
+
     def enqueue_leg(self, option, dest_code, game):
+        self._secure_helm(game)
         self.queue.append(dict(kind='leg', path=[list(p) for p in option.path],
                                nm=option.nm, done=0.0, dest=dest_code))
         if self.port is not None:
@@ -248,6 +256,7 @@ class Ship:
         game.log(f"{self.name} repair {comp}: {ticks} ticks in the berth, -${cost:,}")
 
     def enqueue_tow(self, wreck, game):
+        self._secure_helm(game)
         self.queue.append(dict(kind='tow', target=wreck.name, phase='out',
                                path=None, nm=0.0, done=0.0, dest=None))
         if self.port is not None:
