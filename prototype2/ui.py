@@ -40,6 +40,23 @@ def bearing(a, b):
     return int(math.degrees(math.atan2(b[1] - a[1], b[0] - a[0])) + 90) % 360
 
 
+CARDINALS = ('N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW')
+
+
+def compass(deg):
+    """World angles run 0 = east with +y south; the helm reads from north."""
+    return int(deg + 90) % 360
+
+
+def cardinal(deg):
+    return CARDINALS[int((deg + 22.5) % 360 // 45)]
+
+
+def heading_of(f):
+    """Her present compass heading, whatever is driving her."""
+    return compass(math.degrees(math.atan2(f.heading[1], f.heading[0])))
+
+
 def comp_str(f, wide=True):
     if wide:
         return '  '.join(f"{k} {f.components[k]:3d}" for k in COMPONENTS)
@@ -52,7 +69,7 @@ def ship_status(f, game):
         return ('DERELICT', 'm')
     if f.queue and f.queue[0]['kind'] == 'helm':
         o = f.queue[0]
-        return (f"HELM {int(o['hdg']) % 360:03d} {THROTTLES[o['thr']]}", 'c')
+        return (f"HELM {compass(o['hdg']):03d} {THROTTLES[o['thr']]}", 'c')
     if f.port is not None:
         if f.circuit:
             tag = ''
@@ -1432,21 +1449,30 @@ class InHullView:
         thr = f.throttle()
         if thr is not None:
             o = f.queue[0]
-            helm_v, hfg = f"hdg {int(o['hdg']) % 360:03d}  {THROTTLES[thr]}", 'w'
+            hdg = compass(o['hdg'])
+            helm_v, hfg = (f"{hdg:03d} {cardinal(hdg):<2}  {THROTTLES[thr]}",
+                           'w')
         else:
-            helm_v, hfg = 'auto / queue', 'd'
+            hdg = heading_of(f)
+            helm_v, hfg = f"{hdg:03d} {cardinal(hdg):<2}  auto", '_'
         comp_fg = dict(ENG='g' if f.power['ENG'] else 'm',
                        RDR='g' if f.power['RDR'] else 'm')
         jury = next((o for o in f.queue if o['kind'] == 'jury'), None)
         read = game.read.upper() if game.read else 'WITHHELD'
+        if jury:
+            rig_v = f"{jury['comp']} to {JURY_CAP}"
+        elif f.port is not None:
+            rig_v = 'alongside -- use the yard'
+        elif f.queue:
+            rig_v = 'not while under way'
+        else:
+            rig_v = 'available'
         rows = [('HELM  [H]', helm_v, hfg),
                 ('PWR ENG [1]', 'ON' if f.power['ENG'] else 'OFF -- shielded',
                  comp_fg['ENG']),
                 ('PWR RDR [2]', 'ON' if f.power['RDR'] else 'OFF -- shielded',
                  comp_fg['RDR']),
-                ('RIG   [J]', (f"{jury['comp']} to {JURY_CAP}" if jury
-                               else 'ready (at sea, holding)'),
-                 'a' if jury else 'd'),
+                ('RIG   [J]', rig_v, 'a' if jury else 'd'),
                 ('READ  [E]', read, 'm' if game.read else 'd')]
         for i, (k, v, fg) in enumerate(rows):
             scr.text(PX + 2, 16 + i, k, 'c')

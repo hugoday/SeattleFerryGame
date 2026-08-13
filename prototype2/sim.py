@@ -303,8 +303,8 @@ class Ship:
         if self.port is not None:
             self.port.ferries.remove(self)
             self.port = None
-        game.log(f"{self.name} answers her helm -- "
-                 f"hdg {int(hdg) % 360:03d}, {THROTTLES[thr]}")
+        game.log(f"{self.name} answers her helm -- "        # reported from north
+                 f"hdg {int(hdg + 90) % 360:03d}, {THROTTLES[thr]}")
 
     def drop_helm(self, game):
         if self.queue and self.queue[0].get('kind') == 'helm':
