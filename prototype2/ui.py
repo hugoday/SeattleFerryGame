@@ -635,6 +635,10 @@ class RouteView:
         scr.rtext(scr.cols - 30, 0, f"HULL {f.components['HUL']}%",
                   'g' if f.components['HUL'] > 60 else 'a')
 
+        bound = {}                       # held contracts owed to each port
+        for c in live:
+            bound[c.dest.code] = bound.get(c.dest.code, 0) + 1
+
         dests = self._dests(game, f)
         self.drow %= len(dests)
         scr.text(2, 3, 'DESTINATION', 'c')
@@ -650,6 +654,7 @@ class RouteView:
                 free = d.berths_free(game)
                 scr.text(30, y, 'FULL' if free <= 0 else f'{free} berth',
                          'a' if free <= 0 else 'd')
+                scr.text(4, y + 1, '[X]' * bound.get(d.code, 0), 'c')
 
         dest = dests[self.drow]
         wreck = hasattr(dest, 'derelict')
@@ -702,6 +707,30 @@ class RouteView:
             scr.text(QX, 16, f'[X] ABANDON'
                      f'{" -- CONFIRM?" if self.confirm_x else ""}', 'a')
             scr.rtext(scr.cols - 3, 16, f'-{cost} STANDING', 'a')
+
+        # ---- what is in the hold, and where each item is owed -------------
+        scr.text(QX, 18, 'HOLD MANIFEST', 'c')
+        voids = len(f.cargo) - len(live)
+        scr.rtext(scr.cols - 3, 18,
+                  f'{len(live)}/{f.hold_cap()} aboard'
+                  + (f'  +{voids} VOID' if voids else ''),
+                  'm' if voids else 'c')
+        scr.hline(QX, 19, scr.cols - QX - 2, '─', 'd')
+        if not live:
+            scr.text(QX, 20, 'hold empty', 'd')
+        else:
+            manifest = sorted(live, key=lambda c: (c.dest.code, c.window))
+            for i, c in enumerate(manifest[:6]):
+                y = 20 + i
+                on_leg = (c.dest is dest)
+                scr.text(QX, y, c.dest.code, 'C' if on_leg else 'c')
+                scr.text(QX + 5, y, c.contents[:16], 'w' if on_leg else 'd')
+                scr.rtext(scr.cols - 12, y, f'${c.payment:,}',
+                          'g' if on_leg else 'd')
+                scr.rtext(scr.cols - 3, y, f'{c.window}t',
+                          'a' if c.window <= 8 else ('_' if on_leg else 'd'))
+            if len(manifest) > 6:
+                scr.text(QX, 26, f'+{len(manifest) - 6} more', 'd')
 
         if f.queue:
             scr.text(2, scr.rows - 6, f'queue: {len(f.queue)} order(s), '
