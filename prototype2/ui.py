@@ -47,9 +47,17 @@ def comp_str(f, wide=True):
 
 
 def ship_status(f, game):
+    from sim import THROTTLES
     if f.derelict:
         return ('DERELICT', 'm')
+    if f.queue and f.queue[0]['kind'] == 'helm':
+        o = f.queue[0]
+        return (f"HELM {int(o['hdg']) % 360:03d} {THROTTLES[o['thr']]}", 'c')
     if f.port is not None:
+        if f.circuit:
+            tag = ' PAUSED' if f.circuit.get('paused') else ''
+            return (f"T{f.agent} {'-'.join(f.circuit['ports'])}{tag}",
+                    'a' if tag else 'g')
         return (f"docked {f.port.code}", '_')
     if f.queue and f.queue[0]['kind'] == 'leg':
         o = f.queue[0]
@@ -57,6 +65,10 @@ def ship_status(f, game):
         return (f"leg->{o['dest'] or 'sea'} {t}t", '_')
     if f.queue and f.queue[0]['kind'] == 'tow':
         return (f"tow {f.queue[0]['target']}", '_')
+    if f.queue and f.queue[0]['kind'] == 'jury':
+        return (f"rigging {f.queue[0]['comp']}", 'a')
+    if f.circuit and f.circuit.get('paused'):
+        return ('circuit PAUSED -- holding', 'a')
     return ('HOLDING in open water', 'a')
 
 
@@ -183,8 +195,10 @@ class MapView:
         if rep:
             ax, ay = self.to_cell(scr, rep[0], rep[1])
             self._put_map(scr, ax, ay, '?', 'm')
-            if self.scale_i > 0 or rep[2] > 0:
-                tag = 'UNRESOLVED' if rep[2] == 0 else f'LAST SEEN T-{rep[2]}'
+            if self.scale_i > 0 or rep[3] != 'RESOLVED':
+                tag = {'RESOLVED': 'UNRESOLVED'}.get(rep[3], rep[3])
+                if rep[2] > 0:
+                    tag += f' T-{rep[2]}'
                 self._text_map(scr, ax + 2, ay, tag, 'm')
 
         # ---- chrome ------------------------------------------------------
@@ -215,11 +229,12 @@ class MapView:
                             f"{comp_str(f, wide=False)}  {st}{obs}"[:31], sfg))
         if rep:
             entries = entries[:rows_avail - 1]
-            stale = '' if rep[2] == 0 else f'  stale {rep[2]}t'
-            entries.append(('?', 'm', 'UNRESOLVED', 'm',
+            tag = {'RESOLVED': 'UNRESOLVED'}.get(rep[3], rep[3])
+            stale = '' if rep[2] == 0 else f' T-{rep[2]}'
+            entries.append(('?', 'm', tag[:11], 'm',
                             f"brg {bearing(sp.pos, rep[:2]):03d}  "
-                            f"{world.dist(sp.pos, rep[:2]):5.1f} NM  "
-                            f"radar/sonar disagree{stale}", 'a'))
+                            f"{world.dist(sp.pos, rep[:2]):5.1f} NM"
+                            f"{stale}", 'a'))
         shown = entries[:rows_avail]
         for i, (g, gfg, name, nfg, st, sfg) in enumerate(shown):
             scr.text(12, fy + 1 + i, g, gfg)
@@ -668,9 +683,18 @@ class RouteView:
         if f.queue:
             scr.text(2, scr.rows - 6, f'queue: {len(f.queue)} order(s), '
                      f'{f.eta_ticks()} tick(s) committed', 'c')
+        if f.circuit:
+            tag = '  PAUSED [G]' if f.circuit.get('paused') else ''
+            cfg = 'a' if tag else 'g'
+            scr.text(2, scr.rows - 5, f'circuit (T{f.agent}): '
+                     f'{" -> ".join(f.circuit["ports"])}{tag}', cfg)
+            if f.agent < 1:
+                scr.text(2, scr.rows - 4,
+                         'no agent aboard -- the circuit is only a wish', 'a')
         scr.hline(0, scr.rows - 3, scr.cols, '═', 'c')
         scr.text(2, scr.rows - 2,
-                 'W/S DEST   A/D OPTION   SPACE COMMIT   X ABANDON   Q BACK', 'c')
+                 'W/S DEST  A/D OPTION  SPACE COMMIT  C CIRCUIT  G PAUSE  '
+                 'X ABANDON  Q BACK', 'c')
         eventline(scr, game)
 
     def key(self, k, game):
@@ -698,6 +722,28 @@ class RouteView:
             elif live:
                 game.abandon(f)
                 self.confirm_x = False
+        elif k == pg.K_c:
+            dest = dests[self.drow % len(dests)]
+            if hasattr(dest, 'derelict'):
+                game.log('a wreck is not a port of call', 'a')
+                return 'route'
+            if f.circuit is None:
+                ports = [f.port.code] if f.port else []
+                f.circuit = dict(ports=ports, paused=False)
+            ports = f.circuit['ports']
+            if dest.code in ports:
+                ports.remove(dest.code)
+                game.log(f'{dest.code} struck from the circuit')
+            else:
+                ports.append(dest.code)
+                game.log(f'{dest.code} added to the circuit: '
+                         f'{" -> ".join(ports)}')
+            if len(ports) < 2 and not (len(ports) == 1 and f.port is None):
+                pass                      # a one-port circuit just waits
+        elif k == pg.K_g and f.circuit:
+            f.circuit['paused'] = not f.circuit.get('paused')
+            game.log(f'circuit {"paused" if f.circuit["paused"] else "resumed"}'
+                     f' aboard {f.name}')
         elif k == pg.K_SPACE:
             dest = dests[self.drow % len(dests)]
             if hasattr(dest, 'derelict'):
@@ -942,10 +988,28 @@ class ShipyardView:
             rows.append((label + unit, arr[lv], nxt, f.upgrade_price(kk),
                          lv, len(arr)))
         self._refit_table(scr, 2, 14, rows, game, here and not f.derelict)
+        # agents: the fourth refit line. They automate labor, never attention.
+        from sim import AGENT_PRICES
+        ap = AGENT_PRICES[f.agent + 1] if f.agent < 3 else None
+        acan = here and not f.derelict and ap is not None \
+            and game.credits >= ap and not game.in_arrears
+        aon = (self.sec == 'refit' and self.rrow == 3)
+        scr.text(2, 21, 'Agent', '_')
+        scr.rtext(21, 21, f'T{f.agent}', 'w')
+        scr.text(22, 21, '>', 'd')
+        scr.rtext(28, 21, f'T{f.agent + 1}' if ap else '--',
+                  '_' if acan else 'd')
+        albl = '[ CONFIRM ]' if (aon and self.confirm) else '[ INSTALL ]'
+        if ap is None:
+            albl = '[   MAX   ]'
+        scr.text(30, 21, albl, 'w' if aon else ('_' if acan else 'd'),
+                 'S' if aon else None)
+        if ap:
+            scr.rtext(52, 21, f'${ap:,}', 'g' if acan else 'd')
         if f.derelict:
-            scr.text(2, 21, 'derelict: repair her hull before anything else', 'm')
+            scr.text(2, 22, 'derelict: repair her hull before anything else', 'm')
         elif not here:
-            scr.text(2, 21, 'sail her to the yard to refit', 'a')
+            scr.text(2, 22, 'sail her to the yard to refit', 'a')
 
         # ---- market + buoys ---------------------------------------------
         self._market(scr, game, yard, 12)
@@ -1066,7 +1130,7 @@ class ShipyardView:
             if self.sec == 'fleet':
                 self.frow = (self.frow + d) % len(game.ships)
             elif self.sec == 'refit':
-                self.rrow = (self.rrow + d) % 3
+                self.rrow = (self.rrow + d) % 4
             elif self.sec == 'market':
                 self.mrow = (self.mrow + d) % len(CLASSES)
             else:
@@ -1076,7 +1140,21 @@ class ShipyardView:
                     self.brow = (self.brow + d) % min(4, len(dark))
             self.confirm = False
         elif k == pg.K_SPACE:
-            if self.sec == 'refit':
+            if self.sec == 'refit' and self.rrow == 3:
+                from sim import AGENT_PRICES
+                ap = AGENT_PRICES[f.agent + 1] if f.agent < 3 else None
+                if not here or f.derelict or ap is None \
+                        or game.credits < ap or game.in_arrears:
+                    self.confirm = False
+                elif not self.confirm:
+                    self.confirm = True
+                else:
+                    f.agent += 1
+                    game.credits -= ap
+                    game.log(f'{f.name} agent T{f.agent} installed, '
+                             f'-${ap:,} -- it will not hold the flag')
+                    self.confirm = False
+            elif self.sec == 'refit':
                 kind = ['hold', 'spd', 'eff'][self.rrow]
                 price = f.upgrade_price(kind)
                 if not here or f.derelict or price is None \
@@ -1168,16 +1246,6 @@ class InHullView:
                 self.CY + int(round((wy - f.pos[1]) / sy)))
 
     # ---- sensor model ----------------------------------------------------
-    def _anomaly_radar_pos(self, game):
-        """Where radar *claims* the anomaly is: bearing rotated a few
-        degrees about the hull. Sonar disagrees the other way."""
-        f = self.ship(game)
-        ax, ay = game.anomaly.pos
-        jit = math.radians(8 + (game.tick_no * 7) % 5)
-        dx, dy = ax - f.pos[0], ay - f.pos[1]
-        c, s = math.cos(jit), math.sin(jit)
-        return (f.pos[0] + dx * c - dy * s, f.pos[1] + dx * s + dy * c)
-
     def _cast(self, game, f, deg, now):
         """March one bearing out to the envelope; land shadows the rest."""
         th = math.radians(deg)
@@ -1195,10 +1263,9 @@ class InHullView:
             for g in game.ships:
                 if g is not f and world.dist((wx, wy), g.pos) < 0.6:
                     self.fixes[g.name] = (now, g.pos[0], g.pos[1])
-            if game.anomaly.alive:
-                rp = self._anomaly_radar_pos(game)
-                if world.dist((wx, wy), rp) < 0.8:
-                    self.afix = (now, rp[0], rp[1])
+            claims = game.anomaly_claims(f)
+            if claims and world.dist((wx, wy), claims['radar']) < 0.8:
+                self.afix = (now, claims['radar'][0], claims['radar'][1])
         self.rays[deg] = (now, pts)
 
     def _update(self, game, now):
@@ -1262,12 +1329,10 @@ class InHullView:
             b = math.atan2(g.pos[1] - f.pos[1], g.pos[0] - f.pos[0])
             b += math.sin(now * 0.7 + hash(g.name) % 7) * 0.10
             self._bearing_line(scr, b, sx, sy, r, 'd')
-        if game.anomaly.alive:
-            ax, ay = game.anomaly.pos
-            if world.dist(f.pos, (ax, ay)) < r * 2.5:
-                b = math.atan2(ay - f.pos[1], ax - f.pos[0])
-                b -= math.radians(8) + math.sin(now * 0.9) * 0.06
-                self._bearing_line(scr, b, sx, sy, r, 'm')
+        claims = game.anomaly_claims(f)
+        if claims:
+            b = claims['sonar_brg'] + math.sin(now * 0.9) * 0.05
+            self._bearing_line(scr, b, sx, sy, r, 'm')
 
         # radar returns with afterglow ------------------------------------
         for deg, (stamp, pts) in self.rays.items():
@@ -1322,61 +1387,81 @@ class InHullView:
         self._panels(scr, game, f, now)
         scr.hline(0, scr.rows - 3, scr.cols, '═', 'c')
         scr.text(2, scr.rows - 2,
-                 'P PING   TAB NEXT HULL   SPACE TICK   RETURN RUN   Q BACK', 'c')
+                 'P PING  E READ  H HELM  A/D HDG  W/S THR  1/2 PWR  J RIG  '
+                 'TAB HULL  SPACE/RETURN TIME  Q', 'c')
         eventline(scr, game)
 
     def _panels(self, scr, game, f, now):
+        from sim import THROTTLES, JURY_CAP
         PX = 64
         scr.vline(PX - 1, 2, scr.rows - 5, '║', 'c')
-        scr.rect(PX, 2, scr.cols - PX, 8, 'c', title='SENSORS')
-        rows = [('RADAR', f'{f.radar_r():.1f} NM sweep',
-                 'g' if f.components['RDR'] > 60 else 'a'),
-                ('ARRAY', f"RDR {f.components['RDR']}",
-                 'g' if f.components['RDR'] > 60 else
-                 ('a' if f.components['RDR'] > 0 else 'm')),
+        scr.rect(PX, 2, scr.cols - PX, 7, 'c', title='SENSORS')
+        rows = [('RADAR', (f'{f.radar_r():.1f} NM sweep'
+                           if f.power['RDR'] else 'UNPOWERED'),
+                 ('g' if f.components['RDR'] > 60 else 'a')
+                 if f.power['RDR'] else 'm'),
                 ('SONAR', 'PASSIVE / OMNI', 'g'),
                 ('WATER', f'STABILITY {game.stability(*f.pos, exclude=f)}/4'
-                 + (' +1 radar' if f.components['RDR'] >= 30 else ''), '_'),
+                 + (' +1 radar' if f.power['RDR'] and
+                    f.components['RDR'] >= 30 else ''), '_'),
                 ('FLAG', 'OBSERVED' if game.observed is f else 'unheld',
                  'g' if game.observed is f else 'd')]
         for i, (k, v, fg) in enumerate(rows):
             scr.text(PX + 2, 4 + i, k, 'c')
             scr.rtext(scr.cols - 3, 4 + i, v, fg)
 
-        scr.rect(PX, 10, scr.cols - PX, 7, 'c', title='EMISSIONS')
+        scr.rect(PX, 9, scr.cols - PX, 5, 'c', title='EMISSIONS')
         n = f.noise
         bar = '[' + '#' * (n // 10) + '.' * (10 - n // 10) + ']'
         nfg = 'g' if n < 15 else ('a' if n < 40 else 'm')
-        scr.text(PX + 2, 12, 'NOISE', 'c')
-        scr.rtext(scr.cols - 3, 12, f'{n:3d} {bar}', nfg)
-        scr.text(PX + 2, 13, 'ENGINE', 'c')
-        scr.rtext(scr.cols - 3, 13, '+2 / tick underway', 'd')
-        scr.text(PX + 2, 14, 'PING', 'c')
-        scr.rtext(scr.cols - 3, 14, '+30, full resolution', 'd')
-        scr.text(PX + 2, 15, 'every act of looking announces', 'd')
+        scr.text(PX + 2, 11, 'NOISE', 'c')
+        scr.rtext(scr.cols - 3, 11, f'{n:3d} {bar}', nfg)
+        scr.text(PX + 2, 12, 'every act of looking announces', 'd')
 
-        scr.rect(PX, 17, scr.cols - PX, 9, 'c', title='CONTACTS')
-        y = 19
+        # ---- the con: helm, power, and the committed read ---------------
+        scr.rect(PX, 14, scr.cols - PX, 8, 'c', title='CON')
+        thr = f.throttle()
+        if thr is not None:
+            o = f.queue[0]
+            helm_v, hfg = f"hdg {int(o['hdg']) % 360:03d}  {THROTTLES[thr]}", 'w'
+        else:
+            helm_v, hfg = 'auto / queue', 'd'
+        comp_fg = dict(ENG='g' if f.power['ENG'] else 'm',
+                       RDR='g' if f.power['RDR'] else 'm')
+        jury = next((o for o in f.queue if o['kind'] == 'jury'), None)
+        read = game.read.upper() if game.read else 'WITHHELD'
+        rows = [('HELM  [H]', helm_v, hfg),
+                ('PWR ENG [1]', 'ON' if f.power['ENG'] else 'OFF -- shielded',
+                 comp_fg['ENG']),
+                ('PWR RDR [2]', 'ON' if f.power['RDR'] else 'OFF -- shielded',
+                 comp_fg['RDR']),
+                ('RIG   [J]', (f"{jury['comp']} to {JURY_CAP}" if jury
+                               else 'ready (at sea, holding)'),
+                 'a' if jury else 'd'),
+                ('READ  [E]', read, 'm' if game.read else 'd')]
+        for i, (k, v, fg) in enumerate(rows):
+            scr.text(PX + 2, 16 + i, k, 'c')
+            scr.rtext(scr.cols - 3, 16 + i, v, fg)
+
+        scr.rect(PX, 22, scr.cols - PX, 6, 'c', title='CONTACTS')
+        y = 24
         for name, (stamp, wx, wy) in sorted(self.fixes.items()):
-            if now - stamp > self.FADE_S or y > 23:
+            if now - stamp > self.FADE_S or y > 25:
                 continue
             scr.text(PX + 2, y, name[:12], '_')
             scr.rtext(scr.cols - 3, y,
                       f'brg {bearing(f.pos, (wx, wy)):03d}  '
                       f'{world.dist(f.pos, (wx, wy)):4.1f} NM', '_')
             y += 1
-        if game.anomaly.alive:
-            ax, ay = game.anomaly.pos
-            if world.dist(f.pos, (ax, ay)) < f.radar_r() * 2.5 and y <= 23:
-                scr.text(PX + 2, y, 'DISPUTED', 'm')
-                scr.rtext(scr.cols - 3, y, 'rng unknown', 'm')
-                scr.text(PX + 4, y + 1, 'radar/sonar disagree', 'm')
-                y += 2
-        if y == 19:
-            scr.text(PX + 2, 19, 'no returns on the plot', 'd')
+        if game.anomaly_claims(f) and y <= 26:
+            scr.text(PX + 2, y, 'DISPUTED', 'm')
+            scr.rtext(scr.cols - 3, y, 'radar/sonar disagree', 'm')
+            y += 1
+        if y == 24:
+            scr.text(PX + 2, 24, 'no returns on the plot', 'd')
 
         st, sfg = ship_status(f, game)
-        scr.text(PX + 2, scr.rows - 6, st, sfg)
+        scr.text(PX + 2, scr.rows - 5, st, sfg)
 
     def _bearing_line(self, scr, th, sx, sy, r, fg):
         d_nm = 1.2
@@ -1403,10 +1488,38 @@ class InHullView:
         if k == pg.K_TAB and game.ships:
             self.mv.sel_ship = (self.mv.sel_ship + 1) % len(game.ships)
             return 'inhull'
-        if k == pg.K_p and f and not f.derelict:
-            self.ping(game, self.mv.anim)
-        elif k == pg.K_SPACE:
+        if k == pg.K_SPACE:
             return 'tick'
-        elif k == pg.K_RETURN:
+        if k == pg.K_RETURN:
             return 'run'
+        if f is None or f.derelict:
+            return 'inhull'
+        thr = f.throttle()
+        if k == pg.K_p:
+            self.ping(game, self.mv.anim)
+        elif k == pg.K_e:
+            order = [None, 'radar', 'sonar']
+            game.set_read(order[(order.index(game.read) + 1) % 3])
+        elif k == pg.K_h:
+            if thr is not None:
+                f.drop_helm(game)
+            else:
+                hdg = math.degrees(math.atan2(f.heading[1], f.heading[0]))
+                f.set_helm(hdg, 0, game)
+        elif thr is not None and k in (pg.K_a, pg.K_d):
+            o = f.queue[0]
+            o['hdg'] = (o['hdg'] + (15 if k == pg.K_d else -15)) % 360
+        elif thr is not None and k in (pg.K_w, pg.K_s):
+            o = f.queue[0]
+            o['thr'] = max(0, min(3, o['thr'] + (1 if k == pg.K_w else -1)))
+        elif k == pg.K_1:
+            f.power['ENG'] = not f.power['ENG']
+            game.log(f"{f.name} engine {'powered' if f.power['ENG'] else 'dark -- shielded, and going nowhere'}")
+        elif k == pg.K_2:
+            f.power['RDR'] = not f.power['RDR']
+            game.log(f"{f.name} radar {'powered' if f.power['RDR'] else 'dark -- shielded, and blind'}")
+        elif k == pg.K_j:
+            worst = min(('ENG', 'RDR', 'HUL'), key=lambda c: f.components[c])
+            if not f.jury_rig(worst, game):
+                game.log('rig needs open water and an empty queue', 'a')
         return 'inhull'

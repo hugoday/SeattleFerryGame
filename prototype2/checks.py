@@ -201,7 +201,149 @@ def check_noise():
     print(f"  noise: ping echoes, decays; anomaly closes {aa:.1f}->{pa:.1f} NM OK")
 
 
-# 9. save -> load -> save is byte-identical mid-everything -----------------
+# 9. the anomaly up close corrupts hulls and deresolves manifests ----------
+def check_anomaly_touch():
+    hul_hit = cargo_hit = 0
+    for s in range(10):
+        g = fresh(300 + s)
+        f = g.ships[0]
+        f.port.ferries.remove(f); f.port = None
+        f.cargo.append(sim.Contract(g.ports[0], g.ports[2], 'Bait', 1000, 99))
+        g.tick_no = sim.ANOMALY_WAKES
+        for _ in range(6):
+            f.pos = list(g.anomaly.pos)   # ride the contact
+            g.step()
+        hul_hit += 100 - f.components['HUL']
+        cargo_hit += 1 if f.cargo and f.cargo[0].void else 0
+    assert hul_hit > 100, f"contact should corrupt hulls, total {hul_hit}"
+    assert cargo_hit >= 5, f"contact should deresolve cargo, {cargo_hit}/10"
+    print(f"  anomaly: avg {hul_hit/10:.0f} hull dmg, {cargo_hit}/10 holds "
+          f"deresolved OK")
+
+
+# 10. interpret: the honest instrument is right, the other lies -------------
+def check_interpret():
+    import math
+    honest_err, lying_err = [], []
+    for s in range(20):
+        g = fresh(400 + s)
+        f = g.ships[0]
+        f.port.ferries.remove(f); f.port = None
+        f.pos = [50.0, 22.0]
+        g.tick_no = sim.ANOMALY_WAKES
+        g.step()
+        c = g.anomaly_claims(f)
+        if not c:
+            continue
+        true = tuple(g.anomaly.pos)
+        sonar = (f.pos[0] + math.cos(c['sonar_brg']) * c['rng'],
+                 f.pos[1] + math.sin(c['sonar_brg']) * c['rng'])
+        r_err, s_err = world.dist(c['radar'], true), world.dist(sonar, true)
+        if g.anomaly.honest == 'radar':
+            honest_err.append(r_err); lying_err.append(s_err)
+        else:
+            honest_err.append(s_err); lying_err.append(r_err)
+    assert max(honest_err) < 0.6, f"honest read must be true, {max(honest_err):.2f}"
+    assert min(lying_err) > 1.0, f"lying read must be off, {min(lying_err):.2f}"
+    # a committed read drives the board's working fix
+    g = fresh(431)
+    f = g.ships[0]
+    f.port.ferries.remove(f); f.port = None
+    f.pos = [50.0, 24.5]
+    g.tick_no = sim.ANOMALY_WAKES
+    g.step()
+    g.anomaly.pos = [56.0, 30.0]          # push it outside all coverage
+    if g.stability(*g.anomaly.pos) < 2 and g.anomaly_claims(f):
+        g.set_read('radar')
+        rep = g.anomaly_report()
+        assert rep and rep[3] == 'FIX/RADAR', f"fix should follow the read: {rep}"
+    print(f"  interpret: honest err<{max(honest_err):.2f}, lying "
+          f"err>{min(lying_err):.2f}, fix follows the read OK")
+
+
+# 11. helm: heading and throttle only, and the shore refuses her ------------
+def check_helm():
+    g = fresh(11)
+    f = g.ships[0]
+    f.set_helm(0, 2, g)                   # due east at CRUISE
+    p0 = tuple(f.pos)
+    g.step()
+    assert world.dist(p0, f.pos) > 3.0, "cruise helm must move her"
+    f.queue[0]['thr'] = 3
+    n_cruise = f.noise
+    g.step()
+    assert f.noise > n_cruise, "flank must be louder than cruise"
+    # aim her at Mercer Island and let the helm refuse
+    f.pos = [20.0, 15.0]
+    f.queue[0].update(hdg=90, thr=3)      # due south into the island
+    for _ in range(6):
+        g.step()
+        if f.queue[0]['thr'] == 0:
+            break
+    assert f.queue[0]['thr'] == 0, "the helm must stop at breakers"
+    print("  helm: moves, flank is loud, breakers stop her OK")
+
+
+# 12. manage: powered-down systems ride it out; the hull never can ----------
+def check_manage():
+    g = fresh(12)
+    f = g.ships[0]
+    f.port.ferries.remove(f); f.port = None
+    f.pos = [50.0, 27.0]
+    f.power['ENG'] = f.power['RDR'] = False
+    for _ in range(40):
+        g.step()
+        if f.derelict:
+            break
+    assert f.components['ENG'] == 100 and f.components['RDR'] == 100, \
+        "shielded components must not take drift damage"
+    assert f.components['HUL'] < 100, "the hull is always in the water"
+    print(f"  manage: dark boat kept ENG/RDR at 100, HUL "
+          f"{f.components['HUL']} OK")
+
+
+# 13. agents: T2 works the circuit; T1 stops dead; T3 finds sea room --------
+def check_agents():
+    g = fresh(13)
+    f = g.ships[0]
+    f.agent = 2
+    f.circuit = dict(ports=['MER', 'EDM', 'KNG'], paused=False)
+    arrivals = loads = 0
+    for _ in range(100):
+        for k, m in g.step():
+            arrivals += 1 if k == 'idle' else 0
+        loads = max(loads, len(f.cargo))
+    assert arrivals >= 6, f"T2 should keep the circuit turning, {arrivals}"
+    assert loads > 0, "T2 must load cargo without being told"
+    g = fresh(14)
+    f = g.ships[0]
+    g.tick_no = sim.ANOMALY_WAKES
+    g.step()
+    g.anomaly.pos = [56.0, 17.5]          # on the EDM-KNG waterline
+    g.anomaly_seen = (56.0, 17.5, g.tick_no)
+    f.agent = 1
+    f.circuit = dict(ports=['EDM', 'KNG'], paused=False)
+    f.port.ferries.remove(f)
+    f.port = g.ports[1]; f.pos = list(g.ports[1].pos)
+    g.ports[1].ferries.append(f)
+    for _ in range(3):
+        g.anomaly_seen = (56.0, 17.5, g.tick_no)
+        g.step()
+    assert f.circuit['paused'], "T1 must stop dead on a contact near the route"
+    f.agent = 3
+    f.circuit['paused'] = False
+    sailed = False
+    for _ in range(4):
+        g.anomaly.pos = [56.0, 17.5]
+        g.anomaly_seen = (56.0, 17.5, g.tick_no)
+        g.step()
+        sailed = sailed or bool(f.queue)
+    assert sailed and not f.circuit['paused'], "T3 must divert, not freeze"
+    print(f"  agents: T2 ran {arrivals} arrivals + loaded {loads}, "
+          f"T1 froze, T3 diverted OK")
+
+
+# 14. save -> load -> save is byte-identical mid-everything -----------------
 def check_save():
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_check_save')
     a, b = out + '_a.json', out + '_b.json'
@@ -215,6 +357,10 @@ def check_save():
     g.ships[1].enqueue_repair('RDR', g) if g.ships[1].repair_quote('RDR') \
         else None
     g.buy_buoy('J6')
+    g.set_read('sonar')
+    f.power['RDR'] = False
+    f.agent = 2
+    f.circuit = dict(ports=['MER', 'KNG'], paused=True)
     for _ in range(4):
         g.step()
     g.save(a)
@@ -239,5 +385,10 @@ if __name__ == '__main__':
     check_delivery()
     check_buoys()
     check_noise()
+    check_anomaly_touch()
+    check_interpret()
+    check_helm()
+    check_manage()
+    check_agents()
     check_save()
     print("ALL OK")

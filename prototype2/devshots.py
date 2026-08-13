@@ -43,6 +43,11 @@ f1.pos = [58.0, 27.0]
 f1.components.update(ENG=40, RDR=22, HUL=0)
 f1.go_derelict(game, [])
 
+# the dispatch AI has opinions: a committed read and a standing circuit
+game.set_read('radar')
+f0.agent = 2
+f0.circuit = dict(ports=['MER', 'KNG'], paused=False)
+
 # run until the anomaly has been seen once, then let it go stale
 for _ in range(12):
     game.step()
