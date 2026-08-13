@@ -20,7 +20,7 @@ import routes
 import world
 
 SAVE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'savegame.json')
-SAVE_VERSION = 1
+SAVE_VERSION = 2
 
 TICK_H = 0.5                  # hours per tick: speed in kts * TICK_H = NM/tick
 REFRESH = 16                  # ticks between contract-offer rotations
@@ -38,6 +38,12 @@ DRIFT_P = (0.55, 0.38, 0.22, 0.10, 0.0)
 DRIFT_DMG = (4, 12)           # damage per hit
 REPAIR_TICKS_PER = 12         # damage points repaired per tick in a berth
 REPAIR_COST_PER = 15          # $ per damage point
+
+# emissions: every act of looking is an act of announcing
+NOISE_DECAY = 8               # per tick
+NOISE_ENGINE = 2              # per tick while underway
+NOISE_PING = 30               # one active ping
+NOISE_DRAWS = 25              # above this, the basin starts to listen
 
 # standing
 STAND_DELIVER, STAND_MISS = 2, 8
@@ -144,6 +150,7 @@ class Ship:
         self.heading = (1, 0)
         self.components = dict(ENG=100, RDR=100, HUL=100)
         self.derelict = False
+        self.noise = 0                    # emissions ledger, 0..100
         self.queue = []                   # orders: plain dicts, save-ready
         port.ferries.append(self)
 
@@ -241,6 +248,7 @@ class Ship:
         step = min(speed, o['nm'] - o['done'])
         o['done'] += step
         game.credits -= step * self.eff()
+        self.noise = min(100, self.noise + NOISE_ENGINE)
         old = tuple(self.pos)
         self.pos = list(routes.point_along(o['path'], o['done']))
         if abs(self.pos[0] - old[0]) + abs(self.pos[1] - old[1]) > 1e-6:
@@ -358,6 +366,17 @@ class Anomaly:
         self.drift += game.rng.uniform(-0.4, 0.4)
         self.pos[0] += math.cos(self.drift) * 0.5
         self.pos[1] += math.sin(self.drift) * 0.5
+        # Noise-drawn precursor: emissions are bait. A loud hull nearby
+        # bends the wander toward it -- gently, for now.
+        loud = [f for f in game.ships if not f.derelict
+                and f.noise >= NOISE_DRAWS
+                and world.dist(f.pos, self.pos) < 18]
+        if loud:
+            t = max(loud, key=lambda f: f.noise)
+            d = world.dist(t.pos, self.pos)
+            if d > 0.1:
+                self.pos[0] += (t.pos[0] - self.pos[0]) / d * 0.35
+                self.pos[1] += (t.pos[1] - self.pos[1]) / d * 0.35
         self.pos[0] = max(44, min(70, self.pos[0]))
         self.pos[1] = max(20, min(31, self.pos[1]))
 
@@ -466,6 +485,12 @@ class Game:
         else:
             self.log("observed flag struck")
 
+    def ping(self, ship):
+        """One active ping: full resolution for the asker, and everything
+        else in the water now knows exactly where she is."""
+        ship.noise = min(100, ship.noise + NOISE_PING)
+        self.log(f"{ship.name} PINGS -- the water answers, and listens", 'a')
+
     def abandon(self, ship, why='abandoned'):
         """Void every contract aboard. Standing cost scales with progress --
         the further along, the worse the breach."""
@@ -509,6 +534,8 @@ class Game:
             self.log("OBSERVED FLAG DROPOUT -- the array blinked", 'm')
             out.append(('dropout', 'flag dropout'))
 
+        for f in self.ships:
+            f.noise = max(0, f.noise - NOISE_DECAY)
         for f in self.ships:
             f.tick(self, out)
         for f in self.ships:
@@ -609,7 +636,7 @@ class Game:
                         port=f.port.code if f.port else None,
                         pos=f.pos, heading=list(f.heading),
                         components=f.components, derelict=f.derelict,
-                        queue=f.queue)
+                        noise=f.noise, queue=f.queue)
                    for f in self.ships])
         tmp = path + '.tmp'
         with open(tmp, 'w') as fp:
@@ -669,6 +696,7 @@ def load(path=SAVE_PATH):
         f.heading = tuple(fd['heading'])
         f.components = dict(fd['components'])
         f.derelict = fd['derelict']
+        f.noise = fd['noise']
         f.queue = fd['queue']
         g.ships.append(f)
     g.observed = g.ship(data['observed']) if data['observed'] else None

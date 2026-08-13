@@ -171,7 +171,37 @@ def check_buoys():
     print(f"  buoys: KNG-SHY corridor {before}/4 -> {after}/4 OK")
 
 
-# 8. save -> load -> save is byte-identical mid-everything -----------------
+# 8. emissions: pings echo, decay, and bait the anomaly --------------------
+def check_noise():
+    g = fresh(9)
+    f = g.ships[0]
+    g.ping(f)
+    assert f.noise >= sim.NOISE_PING, "ping must raise the ledger"
+    n0 = f.noise
+    g.step()
+    assert f.noise < n0, "noise must decay per tick"
+    # a loud hull in the basin pulls the anomaly toward it
+    pulled, ambient = [], []
+    for s in range(20):
+        for loud in (True, False):
+            g = fresh(200 + s)
+            f = g.ships[0]
+            if f.port:
+                f.port.ferries.remove(f); f.port = None
+            f.pos = [56.0, 28.0]
+            g.tick_no = sim.ANOMALY_WAKES     # wake it immediately
+            for _ in range(12):
+                if loud:
+                    f.noise = 100             # held loud
+                g.step()
+            d = world.dist(f.pos, g.anomaly.pos)
+            (pulled if loud else ambient).append(d)
+    pa, aa = sum(pulled) / len(pulled), sum(ambient) / len(ambient)
+    assert pa < aa, f"noise should bait the anomaly ({pa:.1f} !< {aa:.1f})"
+    print(f"  noise: ping echoes, decays; anomaly closes {aa:.1f}->{pa:.1f} NM OK")
+
+
+# 9. save -> load -> save is byte-identical mid-everything -----------------
 def check_save():
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_check_save')
     a, b = out + '_a.json', out + '_b.json'
@@ -208,5 +238,6 @@ if __name__ == '__main__':
     check_window()
     check_delivery()
     check_buoys()
+    check_noise()
     check_save()
     print("ALL OK")

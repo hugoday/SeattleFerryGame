@@ -16,7 +16,7 @@ import sim
 import ui
 
 THEME = {'map': 'navy', 'cargo': 'dark', 'route': 'dark', 'repair': 'dark',
-         'shipyard': 'dark', 'portupgrade': 'dark'}
+         'shipyard': 'dark', 'portupgrade': 'dark', 'inhull': 'dark'}
 RUN_TICK_S = 0.22            # real seconds per tick while running
 
 
@@ -40,7 +40,8 @@ def main():
     views = {'map': mv, 'cargo': cv, 'route': rv,
              'repair': ui.RepairView(mv, cv),
              'shipyard': ui.ShipyardView(mv, rv),
-             'portupgrade': ui.PortUpgradeView(mv)}
+             'portupgrade': ui.PortUpgradeView(mv),
+             'inhull': ui.InHullView(mv)}
     state = 'map'
     running = True
     auto_run = False
@@ -57,16 +58,17 @@ def main():
                 if auto_run:
                     auto_run = False        # any key halts a run
                     continue
+                prev = state
                 state = views[state].key(ev.key, game)
                 if state == 'quit':
                     running = False
                     state = 'map'
                 elif state == 'tick':
                     game.step()
-                    state = 'map'
+                    state = prev
                 elif state == 'run':
                     auto_run, run_accum = True, 0.0
-                    state = 'map'
+                    state = prev
                 elif state == 'load':
                     try:
                         game = sim.load()

@@ -89,4 +89,21 @@ mv.draw(scr, game)
 scr.flush(surface)
 pg.image.save(surface, os.path.join(OUT, 'proto2_map_basin.png'))
 print(os.path.join(OUT, 'proto2_map_basin.png'))
+
+# in-hull: sail ENDURANCE into the basin near the wreck and the anomaly,
+# warm the sweep, then ping
+hv = ui.InHullView(mv)
+f0.port.ferries.remove(f0)
+f0.port = None
+f0.pos = [55.0, 24.5]
+f0.heading = (1, 0.3)
+mv.sel_ship = 0
+for warm in (0.5, 1.4, 2.3, 3.1, 3.9):      # several frames of sweep
+    mv.anim = warm
+    hv._update(game, warm)
+mv.anim = 4.0
+shoot('inhull', 'dark', hv)
+hv.ping(game, mv.anim)
+mv.anim = 4.4
+shoot('inhull_ping', 'dark', hv)
 print('OK')

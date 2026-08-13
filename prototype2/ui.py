@@ -64,8 +64,8 @@ def ship_status(f, game):
 class MapView:
     SCALES = [1.06, 0.42, 0.18]
     RUN_HELP = ('ARROWS PAN  -/+ RANGE  A/D PORT  TAB SHIP',
-                'E OPEN  U UPGRADE  O OBSERVE  R ROUTE  X ABANDON',
-                'SPACE TICK  RETURN RUN  F5/F9 SAVE/LOAD  Q QUIT')
+                'E OPEN  U UPGRADE  O OBSERVE  R ROUTE  I HULL',
+                'X ABANDON  SPACE TICK  RETURN RUN  F5/F9  Q QUIT')
 
     def __init__(self):
         self.scale_i = 0
@@ -164,7 +164,7 @@ class MapView:
         for i, f in enumerate(game.ships):
             px, py = self.to_cell(scr, *f.pos)
             if f.derelict:
-                self._put_map(scr, px, py, '✕', 'm')
+                self._put_map(scr, px, py, '×', 'm')
             else:
                 hx, hy = f.heading
                 g = '►' if abs(hx) >= abs(hy) and hx >= 0 else \
@@ -207,7 +207,7 @@ class MapView:
         entries = []
         for i, f in enumerate(game.ships):
             st, sfg = ship_status(f, game)
-            mark = '✕' if f.derelict else '►'
+            mark = '×' if f.derelict else '►'
             nfg = 'w' if i == self.sel_ship else \
                 ('m' if f.derelict else '_')
             obs = ' [OBS]' if game.observed is f else ''
@@ -292,6 +292,8 @@ class MapView:
             game.set_observed(f)
         elif k == pg.K_r and f and not f.derelict:
             return 'route'
+        elif k == pg.K_i and f:
+            return 'inhull'
         elif k == pg.K_x and f:
             live = [c for c in f.cargo if not c.void]
             if not live:
@@ -902,7 +904,7 @@ class ShipyardView:
             y = 6 + i
             st, sfg = ship_status(f, game)
             on = (self.sec == 'fleet' and i == self.frow)
-            scr.text(2, y, '✕' if f.derelict else '►', 'm' if f.derelict else 'g')
+            scr.text(2, y, '×' if f.derelict else '►', 'm' if f.derelict else 'g')
             scr.text(4, y, f.name, 'w' if on else ('m' if f.derelict else '_'),
                      'S' if on else None)
             scr.text(16, y, ' '.join(f'{f.components[c]:3d}' for c in COMPONENTS),
@@ -1123,3 +1125,288 @@ class ShipyardView:
         game.credits -= spec['price']
         game.log(f'M/V {nm} ({name}) delivered, -${spec["price"]:,}')
         self.confirm = False
+
+
+# ================================================================== in-hull
+class InHullView:
+    """The ship's instruments. Same alphabet, zoomed to the sensor envelope.
+    No cameras. Beyond sensor range the screen is not black -- it is absent.
+
+    Radar: a directional sweep, crisp, short decay, blocked by land.
+    Sonar: always on, omnidirectional, bearings smeared, never a range.
+    Ping: everything at once, and everything knows where you are.
+    The two instruments do not agree about the thing in the basin.
+    """
+    SWEEP_DPS = 110.0            # sweep degrees per wall-second
+    FADE_S = 7.0                 # radar return afterglow
+    CX, CY = 31, 16              # scope center cell
+    SW, SH = 62, 28              # scope extent in cells
+
+    def __init__(self, mapview):
+        self.mv = mapview
+        self.ship_name = None
+        self.sweep = 0.0
+        self.rays = {}               # deg -> (stamp, [(wx, wy)] land points)
+        self.fixes = {}              # name -> (stamp, wx, wy)
+        self.afix = None             # (stamp, wx, wy) radar's anomaly claim
+        self.flash_until = -9.0      # ping flash window
+        self._last_anim = None
+
+    def ship(self, game):
+        return self.mv.ship(game)
+
+    # ---- geometry --------------------------------------------------------
+    def _scales(self, scr, f):
+        r = max(2.5, f.radar_r())
+        sy = r / (self.SH / 2 - 1)
+        sx = sy * (scr.cw / scr.ch) if scr else sy * 0.5
+        return sx, sy, r
+
+    def to_cell(self, scr, f, wx, wy):
+        sx, sy, _ = self._scales(scr, f)
+        return (self.CX + int(round((wx - f.pos[0]) / sx)),
+                self.CY + int(round((wy - f.pos[1]) / sy)))
+
+    # ---- sensor model ----------------------------------------------------
+    def _anomaly_radar_pos(self, game):
+        """Where radar *claims* the anomaly is: bearing rotated a few
+        degrees about the hull. Sonar disagrees the other way."""
+        f = self.ship(game)
+        ax, ay = game.anomaly.pos
+        jit = math.radians(8 + (game.tick_no * 7) % 5)
+        dx, dy = ax - f.pos[0], ay - f.pos[1]
+        c, s = math.cos(jit), math.sin(jit)
+        return (f.pos[0] + dx * c - dy * s, f.pos[1] + dx * s + dy * c)
+
+    def _cast(self, game, f, deg, now):
+        """March one bearing out to the envelope; land shadows the rest."""
+        th = math.radians(deg)
+        dx, dy = math.cos(th), math.sin(th)
+        pts, step = [], 0.35
+        n = int(f.radar_r() / step)
+        for i in range(1, n + 1):
+            wx, wy = f.pos[0] + dx * step * i, f.pos[1] + dy * step * i
+            if world.land(wx, wy):
+                pts.append((wx, wy))
+                nx, ny = wx + dx * step, wy + dy * step
+                if world.land(nx, ny):
+                    pts.append((nx, ny))
+                break
+            for g in game.ships:
+                if g is not f and world.dist((wx, wy), g.pos) < 0.6:
+                    self.fixes[g.name] = (now, g.pos[0], g.pos[1])
+            if game.anomaly.alive:
+                rp = self._anomaly_radar_pos(game)
+                if world.dist((wx, wy), rp) < 0.8:
+                    self.afix = (now, rp[0], rp[1])
+        self.rays[deg] = (now, pts)
+
+    def _update(self, game, now):
+        f = self.ship(game)
+        if self._last_anim is None or f.name != self.ship_name:
+            self._last_anim = now
+            self.ship_name = f.name
+            self.rays.clear(); self.fixes.clear(); self.afix = None
+        dt = min(0.5, max(0.0, now - self._last_anim))
+        self._last_anim = now
+        if f.components['RDR'] <= 0:
+            return                       # a dead array sweeps nothing
+        start = int(self.sweep)
+        self.sweep = (self.sweep + self.SWEEP_DPS * dt) % 360.0
+        end = int(self.sweep)
+        deg, guard = start, 0
+        while deg != end and guard < 361:
+            deg = (deg + 1) % 360
+            guard += 1
+            self._cast(game, f, deg, now)
+
+    def ping(self, game, now):
+        f = self.ship(game)
+        game.ping(f)
+        for d in range(360):
+            self._cast(game, f, d, now)
+        self.flash_until = now + 2.5
+
+    # ---- draw ------------------------------------------------------------
+    def draw(self, scr, game):
+        f = self.ship(game)
+        now = self.mv.anim
+        header(scr, game, 'IN-HULL', f'M/V {f.name}' if f else '')
+        if f is None:
+            scr.ctext(scr.cols // 2, 12, 'NO HULL SELECTED', 'd')
+            eventline(scr, game)
+            return
+        if f.derelict:
+            scr.ctext(self.CX, 14, 'ALL SYSTEMS DARK', 'm')
+            scr.ctext(self.CX, 16, 'she is not listening to anyone', 'd')
+            self._panels(scr, game, f, now)
+            eventline(scr, game)
+            return
+        self._update(game, now)
+        sx, sy, r = self._scales(scr, f)
+
+        # range rings -- the only soft geometry on the boat
+        ring_nm = 2.0
+        while ring_nm <= r + 0.01:
+            for d in range(0, 360, 4):
+                th = math.radians(d)
+                x = self.CX + int(round(math.cos(th) * ring_nm / sx))
+                y = self.CY + int(round(math.sin(th) * ring_nm / sy))
+                self._put(scr, x, y, '·', 'D')
+            ring_nm += 2.0
+
+        # sonar: smeared bearings, no ranges, long patience ---------------
+        for g in game.ships:
+            if g is f or g.port is not None or g.derelict:
+                continue
+            b = math.atan2(g.pos[1] - f.pos[1], g.pos[0] - f.pos[0])
+            b += math.sin(now * 0.7 + hash(g.name) % 7) * 0.10
+            self._bearing_line(scr, b, sx, sy, r, 'd')
+        if game.anomaly.alive:
+            ax, ay = game.anomaly.pos
+            if world.dist(f.pos, (ax, ay)) < r * 2.5:
+                b = math.atan2(ay - f.pos[1], ax - f.pos[0])
+                b -= math.radians(8) + math.sin(now * 0.9) * 0.06
+                self._bearing_line(scr, b, sx, sy, r, 'm')
+
+        # radar returns with afterglow ------------------------------------
+        for deg, (stamp, pts) in self.rays.items():
+            age = now - stamp
+            if age > self.FADE_S:
+                continue
+            fg = 'R' if age < 1.2 else ('c' if age < 3.5 else 'd')
+            for wx, wy in pts:
+                x, y = self.to_cell(scr, f, wx, wy)
+                self._put(scr, x, y, '█' if age < 3.5 else '▓', fg)
+
+        # the sweep line itself -------------------------------------------
+        th = math.radians(self.sweep)
+        d_nm, step_nm = 0.6, 0.3
+        while d_nm <= r:
+            x = self.CX + int(round(math.cos(th) * d_nm / sx))
+            y = self.CY + int(round(math.sin(th) * d_nm / sy))
+            self._put(scr, x, y, '·', 'C')
+            d_nm += step_nm
+
+        # contacts the sweep has fixed ------------------------------------
+        for name, (stamp, wx, wy) in self.fixes.items():
+            age = now - stamp
+            if age > self.FADE_S:
+                continue
+            g = game.ship(name)
+            x, y = self.to_cell(scr, f, wx, wy)
+            self._put(scr, x, y, '×' if (g and g.derelict) else '►',
+                      'm' if (g and g.derelict) else ('w' if age < 1.2 else 'g'))
+            if age < 3.5:
+                self._text(scr, x + 2, y, name, 'd')
+
+        # the disputed return ---------------------------------------------
+        if self.afix and now - self.afix[0] <= self.FADE_S:
+            x, y = self.to_cell(scr, f, self.afix[1], self.afix[2])
+            self._put(scr, x, y, '?', 'm')
+            if now - self.afix[0] < 3.5:
+                self._text(scr, x + 2, y, 'DISPUTED', 'm')
+        if now < self.flash_until and game.anomaly.alive:
+            ax, ay = game.anomaly.pos
+            if world.dist(f.pos, (ax, ay)) <= r:
+                x, y = self.to_cell(scr, f, ax, ay)
+                self._put(scr, x, y, '?', 'w')
+                self._text(scr, x + 2, y, 'RESOLVED (fading)', 'w')
+
+        # own hull ---------------------------------------------------------
+        hx, hy = f.heading
+        g = '►' if abs(hx) >= abs(hy) and hx >= 0 else \
+            '◄' if abs(hx) >= abs(hy) else ('▼' if hy > 0 else '▲')
+        self._put(scr, self.CX, self.CY, g, 'w')
+
+        self._panels(scr, game, f, now)
+        scr.hline(0, scr.rows - 3, scr.cols, '═', 'c')
+        scr.text(2, scr.rows - 2,
+                 'P PING   TAB NEXT HULL   SPACE TICK   RETURN RUN   Q BACK', 'c')
+        eventline(scr, game)
+
+    def _panels(self, scr, game, f, now):
+        PX = 64
+        scr.vline(PX - 1, 2, scr.rows - 5, '║', 'c')
+        scr.rect(PX, 2, scr.cols - PX, 8, 'c', title='SENSORS')
+        rows = [('RADAR', f'{f.radar_r():.1f} NM sweep',
+                 'g' if f.components['RDR'] > 60 else 'a'),
+                ('ARRAY', f"RDR {f.components['RDR']}",
+                 'g' if f.components['RDR'] > 60 else
+                 ('a' if f.components['RDR'] > 0 else 'm')),
+                ('SONAR', 'PASSIVE / OMNI', 'g'),
+                ('WATER', f'STABILITY {game.stability(*f.pos, exclude=f)}/4'
+                 + (' +1 radar' if f.components['RDR'] >= 30 else ''), '_'),
+                ('FLAG', 'OBSERVED' if game.observed is f else 'unheld',
+                 'g' if game.observed is f else 'd')]
+        for i, (k, v, fg) in enumerate(rows):
+            scr.text(PX + 2, 4 + i, k, 'c')
+            scr.rtext(scr.cols - 3, 4 + i, v, fg)
+
+        scr.rect(PX, 10, scr.cols - PX, 7, 'c', title='EMISSIONS')
+        n = f.noise
+        bar = '[' + '#' * (n // 10) + '.' * (10 - n // 10) + ']'
+        nfg = 'g' if n < 15 else ('a' if n < 40 else 'm')
+        scr.text(PX + 2, 12, 'NOISE', 'c')
+        scr.rtext(scr.cols - 3, 12, f'{n:3d} {bar}', nfg)
+        scr.text(PX + 2, 13, 'ENGINE', 'c')
+        scr.rtext(scr.cols - 3, 13, '+2 / tick underway', 'd')
+        scr.text(PX + 2, 14, 'PING', 'c')
+        scr.rtext(scr.cols - 3, 14, '+30, full resolution', 'd')
+        scr.text(PX + 2, 15, 'every act of looking announces', 'd')
+
+        scr.rect(PX, 17, scr.cols - PX, 9, 'c', title='CONTACTS')
+        y = 19
+        for name, (stamp, wx, wy) in sorted(self.fixes.items()):
+            if now - stamp > self.FADE_S or y > 23:
+                continue
+            scr.text(PX + 2, y, name[:12], '_')
+            scr.rtext(scr.cols - 3, y,
+                      f'brg {bearing(f.pos, (wx, wy)):03d}  '
+                      f'{world.dist(f.pos, (wx, wy)):4.1f} NM', '_')
+            y += 1
+        if game.anomaly.alive:
+            ax, ay = game.anomaly.pos
+            if world.dist(f.pos, (ax, ay)) < f.radar_r() * 2.5 and y <= 23:
+                scr.text(PX + 2, y, 'DISPUTED', 'm')
+                scr.rtext(scr.cols - 3, y, 'rng unknown', 'm')
+                scr.text(PX + 4, y + 1, 'radar/sonar disagree', 'm')
+                y += 2
+        if y == 19:
+            scr.text(PX + 2, 19, 'no returns on the plot', 'd')
+
+        st, sfg = ship_status(f, game)
+        scr.text(PX + 2, scr.rows - 6, st, sfg)
+
+    def _bearing_line(self, scr, th, sx, sy, r, fg):
+        d_nm = 1.2
+        while d_nm <= r:
+            k = int(d_nm / 0.4)
+            if k % 3 != 0:               # dashed: a guess, not a fact
+                x = self.CX + int(round(math.cos(th) * d_nm / sx))
+                y = self.CY + int(round(math.sin(th) * d_nm / sy))
+                self._put(scr, x, y, '∙', fg)
+            d_nm += 0.4
+
+    def _put(self, scr, x, y, ch, fg):
+        if 0 <= x < self.SW and 2 <= y < 2 + self.SH:
+            scr.put(x, y, ch, fg)
+
+    def _text(self, scr, x, y, s, fg):
+        for i, ch in enumerate(s):
+            self._put(scr, x + i, y, ch, fg)
+
+    def key(self, k, game):
+        f = self.ship(game)
+        if k == pg.K_q:
+            return 'map'
+        if k == pg.K_TAB and game.ships:
+            self.mv.sel_ship = (self.mv.sel_ship + 1) % len(game.ships)
+            return 'inhull'
+        if k == pg.K_p and f and not f.derelict:
+            self.ping(game, self.mv.anim)
+        elif k == pg.K_SPACE:
+            return 'tick'
+        elif k == pg.K_RETURN:
+            return 'run'
+        return 'inhull'
