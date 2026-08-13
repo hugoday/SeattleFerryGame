@@ -319,23 +319,26 @@ def check_agents():
     f = g.ships[0]
     g.tick_no = sim.ANOMALY_WAKES
     g.step()
-    g.anomaly.pos = [56.0, 17.5]          # on the EDM-KNG waterline
-    g.anomaly_seen = (56.0, 17.5, g.tick_no)
+    spot = [58.0, 12.5]                   # squarely on the buoy lane
+    g.anomaly.pos = list(spot)
+    g.anomaly_seen = (spot[0], spot[1], g.tick_no)
     f.agent = 1
     f.circuit = dict(ports=['EDM', 'KNG'], paused=False)
     f.port.ferries.remove(f)
     f.port = g.ports[1]; f.pos = list(g.ports[1].pos)
     g.ports[1].ferries.append(f)
+    # T1 automates sailing, not lading -- load her so she wants to leave
+    f.cargo.append(sim.Contract(g.ports[1], g.ports[2], 'Lane bait', 900, 80))
     for _ in range(3):
-        g.anomaly_seen = (56.0, 17.5, g.tick_no)
+        g.anomaly_seen = (spot[0], spot[1], g.tick_no)
         g.step()
     assert f.circuit['paused'], "T1 must stop dead on a contact near the route"
     f.agent = 3
     f.circuit['paused'] = False
     sailed = False
     for _ in range(4):
-        g.anomaly.pos = [56.0, 17.5]
-        g.anomaly_seen = (56.0, 17.5, g.tick_no)
+        g.anomaly.pos = list(spot)
+        g.anomaly_seen = (spot[0], spot[1], g.tick_no)
         g.step()
         sailed = sailed or bool(f.queue)
     assert sailed and not f.circuit['paused'], "T3 must divert, not freeze"

@@ -68,8 +68,11 @@ JURY_COST = 25                # $ per damage point
 
 # agents automate labor, never attention
 AGENT_PRICES = (None, 6000, 14000, 30000)
-AGENT_STOP_NM = 5.0           # T1/T2 refuse a leg this close to the fix
+AGENT_STOP_NM = 4.0           # T1/T2 refuse a leg this close to the fix
 AGENT_DIVERT_NM = 3.0         # T3 requires this much sea room
+
+# the yard imports: some freight wants the unlit corridor
+SHY_OFFER_P = 0.22
 
 # standing
 STAND_DELIVER, STAND_MISS = 2, 8
@@ -126,10 +129,13 @@ class Port:
             self.lv['docks'] = 1
 
     def cap(self, kind):
-        return PORT_UPG[kind][0][self.lv[kind]] if not self.shipyard or kind == 'docks' \
-            else 0
+        if self.shipyard and kind != 'docks':
+            return dict(cargo=4, stage=2)[kind]   # the yard trades, modestly
+        return PORT_UPG[kind][0][self.lv[kind]]
 
     def upgrade_price(self, kind):
+        if self.shipyard and kind != 'docks':
+            return None                   # the yard is what it is
         lvls, prices = PORT_UPG[kind]
         return prices[self.lv[kind]] if self.lv[kind] < len(lvls) - 1 else None
 
@@ -140,7 +146,12 @@ class Port:
             cap = max(1, cap // 2)        # chronic lateness closes the economy
         if not dests or len(self.cargo) >= cap:
             return False
-        d = game.rng.choice(dests)
+        # the yard imports parts and provisions -- freight with a reason
+        # to sail the unlit corridor. The yard itself only ships out.
+        if not self.shipyard and game.rng.random() < SHY_OFFER_P:
+            d = game.shipyard()
+        else:
+            d = game.rng.choice(dests)
         dist = world.dist(self.pos, d.pos)
         pay = int(dist * game.rng.uniform(*RATE) / 5) * 5
         window = int(dist * 0.9) + game.rng.randint(8, 22)
@@ -275,6 +286,10 @@ class Ship:
         if self.queue and self.queue[0].get('kind') == 'helm':
             self.queue[0]['hdg'], self.queue[0]['thr'] = hdg, thr
             return
+        if any(o['kind'] == 'repair' for o in self.queue):
+            game.log(f"{self.name} is opened up in a berth -- "
+                     f"the yardbirds keep her helm", 'a')
+            return
         self.queue = [dict(kind='helm', hdg=hdg, thr=thr)]
         if self.port is not None:
             self.port.ferries.remove(self)
@@ -377,8 +392,8 @@ class Ship:
 
     def _tick_tow(self, o, game, out):
         wreck = game.ship(o['target'])
-        if wreck is None or not wreck.derelict:
-            self.queue.pop(0)             # nothing left to tow
+        if wreck is None or not wreck.derelict or wreck.port is not None:
+            self.queue.pop(0)             # gone, revived, or already ashore
             out.append(('idle', f"{self.name} tow order lapsed"))
             return
         if o['phase'] == 'out':
@@ -390,17 +405,18 @@ class Ship:
             if self._advance(o, game, self.speed_pt()):
                 yard = game.shipyard()
                 opts = routes.options(tuple(self.pos), yard.code, game.stability)
-                best = opts[0]
-                o.update(phase='back', path=[list(p) for p in best.path],
-                         nm=best.nm, done=0.0, dest=yard.code)
+                path = [list(p) for p in opts[0].path] if opts \
+                    else [list(self.pos), list(yard.pos)]
+                o.update(phase='back', path=path, nm=routes.path_len(path),
+                         done=0.0, dest=yard.code)
                 game.log(f"{self.name} has {wreck.name} under tow")
         else:
             if self._advance(o, game, self.speed_pt() * 0.5):
-                wreck.pos = list(self.pos)
                 self.queue.pop(0)
                 yard = game.port(o['dest'])
                 self._dock(yard, game, out)
                 wreck.port = yard
+                wreck.pos = list(yard.pos)
                 yard.ferries.append(wreck)
                 game.log(f"{wreck.name} towed into the yard -- "
                          f"derelict until her hull is rebuilt", 'a')
@@ -446,6 +462,15 @@ class Ship:
             if here == nxt:               # docked off-circuit at the target
                 nxt = ports[(ports.index(nxt) + 1) % len(ports)]
         dest = game.port(nxt)
+
+        # tier 1 automates sailing, not lading: if there is circuit freight
+        # on this apron and the hold is empty, she waits for dispatch
+        if self.port is not None and self.agent == 1 \
+                and not [c for c in self.cargo if not c.void] \
+                and any(not c.void and c.dest.code in ports
+                        and c.dest is not self.port
+                        for c in self.port.cargo):
+            return
 
         # tier 2+: full port operations -- load whatever serves the circuit
         if self.port is not None and self.agent >= 2:
@@ -574,6 +599,14 @@ class Anomaly:
             if d > 0.1:
                 self.pos[0] += (t.pos[0] - self.pos[0]) / d * 0.35
                 self.pos[1] += (t.pos[1] - self.pos[1]) / d * 0.35
+        # it is undecidedness itself: decided water pushes it out. This is
+        # also what keeps it from camping a port's doorstep forever.
+        if game.stability(*self.pos) >= 3:
+            near = min(game.ports, key=lambda p: world.dist(p.pos, self.pos))
+            d = world.dist(near.pos, self.pos)
+            if d > 0.1:
+                self.pos[0] += (self.pos[0] - near.pos[0]) / d * 0.8
+                self.pos[1] += (self.pos[1] - near.pos[1]) / d * 0.8
         self.pos[0] = max(44, min(70, self.pos[0]))
         self.pos[1] = max(20, min(31, self.pos[1]))
 
@@ -598,7 +631,7 @@ class Game:
         self.anomaly = Anomaly()
         self.anomaly_seen = None          # (x, y, tick) last covered sighting
         self.read = None                  # committed instrument: radar/sonar
-        for p in self.cargo_ports():
+        for p in self.ports:
             for _ in range(p.cap('cargo') // 2):
                 p.new_offer(self)
             p.sort_cargo()
@@ -855,7 +888,7 @@ class Game:
                              f"3 ticks on the window", 'a')
 
         if self.tick_no % REFRESH == 0:
-            for p in self.cargo_ports():
+            for p in self.ports:
                 for c in list(p.cargo):
                     if self.rng.random() < 0.25:
                         p.cargo.remove(c)

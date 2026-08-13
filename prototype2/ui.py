@@ -55,7 +55,13 @@ def ship_status(f, game):
         return (f"HELM {int(o['hdg']) % 360:03d} {THROTTLES[o['thr']]}", 'c')
     if f.port is not None:
         if f.circuit:
-            tag = ' PAUSED' if f.circuit.get('paused') else ''
+            tag = ''
+            if f.circuit.get('paused'):
+                tag = ' PAUSED'
+            elif f.agent == 1 and not [c for c in f.cargo if not c.void] \
+                    and any(not c.void and c.dest.code in f.circuit['ports']
+                            and c.dest is not f.port for c in f.port.cargo):
+                tag = ' LADING?'
             return (f"T{f.agent} {'-'.join(f.circuit['ports'])}{tag}",
                     'a' if tag else 'g')
         return (f"docked {f.port.code}", '_')
@@ -1017,7 +1023,7 @@ class ShipyardView:
 
         scr.hline(0, scr.rows - 3, scr.cols, '═', 'c')
         scr.text(2, scr.rows - 2,
-                 'TAB SECTION   W/S CHOOSE   SPACE ACT (twice confirms)   '
+                 'TAB SECTION   W/S CHOOSE   SPACE ACT (twice)   E CARGO   '
                  'R REPAIR   RETURN ROUTE   Q BACK', 'c')
         scr.rtext(scr.cols - 2, scr.rows - 2, self.sec.upper() + ' <', 'w')
         eventline(scr, game)
@@ -1108,6 +1114,9 @@ class ShipyardView:
         here = f.port is yard
         if k == pg.K_q:
             return 'map'
+        if k == pg.K_e:
+            self.mv.sel = game.ports.index(yard)
+            return 'cargo'                # the yard trades too
         if k == pg.K_r:
             if here:
                 self.mv.sel = game.ports.index(yard)
@@ -1276,8 +1285,8 @@ class InHullView:
             self.rays.clear(); self.fixes.clear(); self.afix = None
         dt = min(0.5, max(0.0, now - self._last_anim))
         self._last_anim = now
-        if f.components['RDR'] <= 0:
-            return                       # a dead array sweeps nothing
+        if f.components['RDR'] <= 0 or not f.power['RDR']:
+            return                       # a dead or dark array sweeps nothing
         start = int(self.sweep)
         self.sweep = (self.sweep + self.SWEEP_DPS * dt) % 360.0
         end = int(self.sweep)

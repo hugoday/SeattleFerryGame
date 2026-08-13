@@ -9,7 +9,9 @@ is untouched; this one moves time only when you spend it.
     python main.py
 
 Requires Python 3.10+ and pygame. `python checks.py` runs the headless
-behavior suite; `python devshots.py <outdir>` renders every view to PNG.
+behavior suite; `python devshots.py <outdir>` renders every view to PNG;
+`python fuzz.py` hammers the model with random dispatch and asserts
+invariants (slower — run it after structural model changes).
 
 ## The tick
 
@@ -83,11 +85,14 @@ J jury-rigs the worst component at sea: slow, expensive, never past 60.
 Installable sub-AIs that automate labor, **never attention** — an
 agent-run hull is as unobserved as any other and no agent may ever hold
 the flag. Circuits are standing routes (C in the commit screen; G pauses).
-T1 sails the circuit and stops dead at anything unexpected. T2 runs full
-port operations — loads whatever serves the circuit, best pay first. T3
-diverts around *known* hazards, taking the long way rather than freezing.
-When the anomaly itself touches any agent's hull, judgment returns to
-dispatch.
+T1 automates the sailing only: she waits for dispatch to load her
+(`LADING?` on the board), then runs the rotation and stops dead at
+anything unexpected — a fixed rotation over thin aprons can absolutely
+run at a loss; that judgment is the labor you didn't pay for. T2 runs
+full port operations — loads whatever serves the circuit, best pay
+first. T3 diverts around *known* hazards, taking the long way rather
+than freezing. When the anomaly itself touches any agent's hull,
+judgment returns to dispatch.
 
 ## Committing a leg
 
