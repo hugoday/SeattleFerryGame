@@ -9,6 +9,11 @@ Campaign design for the game prototype2 is becoming.
   five-basin campaign, the complexity budget, and the design gates.
   Open it in a browser.
 
+- **`time-model.md`** — implementation spec for replacing the 30-minute
+  tick with a 2-minute step and a real clock: why, the full constant
+  conversion table, the gotchas, and the design decisions that must not
+  be resolved silently.
+
 - **`playtest_greedy.py`** — the headless bot the gates are written
   against: a player who works the freight economy competently and ignores
   the observation economy completely. Run it with `python
