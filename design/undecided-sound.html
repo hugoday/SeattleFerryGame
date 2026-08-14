@@ -1,0 +1,617 @@
+<title>The Undecided Sound</title>
+<style>
+  /* Committed single-theme design: this document is a screen in the game's
+     world -- the array's board at night. Every color painted explicitly. */
+  :root {
+    --ground: #071522;
+    --panel: #0b1d2c;
+    --panel-2: #0e2334;
+    --line: #1c3a52;
+    --ink: #d7e6f0;
+    --dim: #7fa0b4;
+    --faint: #4e6b7e;
+    --cyan: #56c1e0;
+    --green: #4fd68a;
+    --amber: #e6a545;
+    --magenta: #e068c0;
+    --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.68;
+    margin: 0;
+    padding: 0 20px;
+  }
+  .col { max-width: 72ch; margin: 0 auto; }
+  header.doc { padding: 64px 0 8px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .18em;
+    color: var(--cyan); text-transform: uppercase; margin: 0 0 18px;
+  }
+  h1 {
+    font-family: var(--mono); font-weight: 600; letter-spacing: .01em;
+    font-size: clamp(30px, 5.4vw, 46px); line-height: 1.12;
+    margin: 0 0 20px; color: var(--ink); text-wrap: balance;
+  }
+  .stand {
+    font-size: 19px; line-height: 1.6; color: var(--dim); margin: 0 0 8px;
+    text-wrap: pretty;
+  }
+  .stand strong { color: var(--ink); font-weight: 600; }
+  h2 {
+    font-family: var(--mono); font-weight: 600; font-size: 21px;
+    letter-spacing: .01em; margin: 72px 0 6px; color: var(--ink);
+    text-wrap: balance;
+  }
+  h2 .tag { color: var(--cyan); margin-right: .6em; }
+  h3 {
+    font-family: var(--mono); font-weight: 600; font-size: 15px;
+    margin: 34px 0 4px; color: var(--cyan); letter-spacing: .04em;
+  }
+  p { margin: 14px 0; text-wrap: pretty; }
+  .kicker {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--faint); margin: 0 0 26px;
+  }
+  a { color: var(--cyan); }
+  em { color: var(--ink); }
+  strong { font-weight: 600; }
+  code, .m {
+    font-family: var(--mono); font-size: .86em; color: var(--cyan);
+    background: var(--panel); padding: 1px 5px; border-radius: 3px;
+  }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 56px 0; }
+
+  /* the log hero */
+  .log {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    padding: 22px 24px; margin: 40px 0 8px;
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.85;
+    overflow-x: auto;
+  }
+  .log .t { color: var(--faint); margin-right: 1.1em; }
+  .log div { white-space: pre; }
+  .log .g { color: var(--green); }
+  .log .a { color: var(--amber); }
+  .log .m2 { color: var(--magenta); }
+  .log .c { color: var(--cyan); }
+  .log .n { color: var(--ink); }
+  .cap {
+    font-family: var(--mono); font-size: 12px; color: var(--faint);
+    letter-spacing: .06em; margin: 10px 0 0;
+  }
+
+  /* evidence row */
+  .stats { display: flex; gap: 14px; flex-wrap: wrap; margin: 26px 0; }
+  .stat {
+    flex: 1 1 180px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 4px; padding: 14px 16px;
+  }
+  .stat b {
+    display: block; font-family: var(--mono); font-size: 22px;
+    font-weight: 600; color: var(--amber); font-variant-numeric: tabular-nums;
+  }
+  .stat span { font-size: 13px; color: var(--dim); line-height: 1.45; display: block; margin-top: 4px; }
+
+  /* spec boxes */
+  .spec {
+    background: var(--panel); border-left: 3px solid var(--cyan);
+    border-radius: 0 4px 4px 0; padding: 14px 20px; margin: 20px 0;
+    font-size: 15px;
+  }
+  .spec .h {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--cyan); margin: 0 0 8px;
+  }
+  .spec ul { margin: 0; padding-left: 20px; }
+  .spec li { margin: 5px 0; color: var(--ink); }
+  .spec li::marker { color: var(--faint); }
+  .num { font-family: var(--mono); font-size: .88em; color: var(--amber); font-variant-numeric: tabular-nums; }
+
+  .connects {
+    font-size: 14.5px; color: var(--dim); margin: 16px 0 0;
+    padding: 10px 0 0; border-top: 1px dashed var(--line);
+  }
+  .connects b { color: var(--green); font-weight: 600; font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; margin-right: .6em; }
+
+  /* tables */
+  .twrap { overflow-x: auto; margin: 22px 0; }
+  table {
+    border-collapse: collapse; width: 100%; font-size: 14px;
+    font-family: var(--mono);
+  }
+  th {
+    text-align: left; font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--faint); font-weight: 600;
+    padding: 8px 14px 8px 0; border-bottom: 1px solid var(--line);
+  }
+  td {
+    padding: 9px 14px 9px 0; border-bottom: 1px solid var(--panel-2);
+    vertical-align: top; color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  td.d { color: var(--dim); font-family: var(--serif); font-size: 14.5px; }
+  .plus { color: var(--green); }
+  .minus { color: var(--magenta); }
+
+  figure { margin: 30px 0; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption {
+    font-family: var(--mono); font-size: 12px; color: var(--faint);
+    letter-spacing: .06em; margin-top: 10px;
+  }
+
+  .foot { padding: 40px 0 80px; color: var(--faint); font-size: 14px; }
+  ::selection { background: #1c4a63; }
+</style>
+
+<div class="col">
+
+<header class="doc">
+  <p class="eyebrow">Seattle Ferry Inc &middot; game design &middot; the 10-hour campaign</p>
+  <h1>The Undecided Sound</h1>
+  <p class="stand">The Salish Sea went undecided years ago. Your two hulls work the
+  last lit pocket of it. <strong>Push the light back out, basin by basin, and find
+  out what put it out.</strong> A reclamation campaign built on prototype2's
+  observation economy, with a hub-and-spoke freight network as its skeleton:
+  freighters on the deep trunk lines, skiffs on the shallow spokes, and
+  attention &mdash; the one thing that doesn't scale &mdash; spent where the light ends.</p>
+</header>
+
+<div class="log" role="img" aria-label="A mocked-up game event log showing the opening of a new basin">
+<div><span class="t">T0412</span><span class="c">convoy committed: TERN, SPILLWAY, DISCOVERY &mdash; one leg, paced to SPILLWAY, coverage pooled</span></div>
+<div><span class="t">T0415</span><span class="n">the reach holds at 3/4 inside the convoy ring. Outside it, the chart is twelve years old</span></div>
+<div><span class="t">T0418</span><span class="a">SPILLWAY ENG -9 &mdash; TERN slows, the ring tightens to keep her water inside</span></div>
+<div><span class="t">T0421</span><span class="n">cedar and transformers ashore at Harrow Point &mdash; the pier lights, section by section</span></div>
+<div><span class="t">T0424</span><span class="g">HARROW POINT DEEP BERTH RESTORED &mdash; the Sound has a second door</span></div>
+<div><span class="t">T0426</span><span class="n">M/V ROSARIO under way from Edmonds: 22 aboard, first freighter south in nine years</span></div>
+<div><span class="t">T0428</span><span class="c">her array walks a corridor of decided water down the reach. Two skiffs drafting close astern</span></div>
+<div><span class="t">T0430</span><span class="g">desperation rates posted at three Harrow ports: x2.1 and falling</span></div>
+<div><span class="t">T0431</span><span class="m2">in the graving dock: the old ferry CASCADIA, holed and waiting nine years for a yard</span></div>
+<div><span class="t">T0432</span><span class="g">four transits on the B-line today &mdash; station tolls +$180. The freight keeps moving</span></div>
+</div>
+<p class="cap">Hour three, as the log would tell it: a basin opens. Convoy, crossing, restoration, first freighter, gold rush &mdash; the campaign's heartbeat, once per basin, harder every time.</p>
+
+<h2><span class="tag">&sect;0</span>Where this stands</h2>
+<p class="kicker">what prototype 2 proved, and where it stalls</p>
+
+<p>Prototype 2's machinery is good &mdash; the tick that only moves when spent, the
+commit screen's exact quotes, the radar/sonar honesty flip, buoys as a
+subscription. What it lacks is plumbing and a destination. A headless bot
+playing the dumbest viable freight strategy, <em>never once</em> observing, pinging,
+or buying a buoy:</p>
+
+<div class="stats">
+  <div class="stat"><b>$10k &rarr; $80k</b><span>mean over 5 seeds, 400 ticks, ignoring the observation game entirely</span></div>
+  <div class="stat"><b>12&ndash;23&times;</b><span>per run a hull docks into an apron not worth fuel, then waits out the 16-tick rotation</span></div>
+  <div class="stat"><b>7&times;</b><span>spread in final credits between seeds, on offer RNG alone</span></div>
+</div>
+
+<p>The systems don't demand each other, and the session has no shape. This
+document is the game where they do, and it does: a campaign of roughly ten
+hours with a beginning, an escalation, and an ending worth reaching.</p>
+
+<h2><span class="tag">&sect;1</span>The game: reopen the Sound</h2>
+<p class="kicker">the campaign in one paragraph</p>
+
+<p>The current 4-port map becomes the <strong>home pocket</strong> &mdash; the first hour of five
+basins. Beyond every dark headland the chart is stale, ports sit unlit with
+hungry populations, and the water is exactly what prototype2 already
+simulates: unstable, component-chewing, haunted. Each basin follows a rhythm
+the systems already support &mdash; <strong>scout it</strong> (the in-hull captain game: creep in
+quiet, ping, read lying instruments), <strong>open it</strong> (the expedition of &sect;5),
+<strong>work it</strong> (desperation rates decaying to normal &mdash; every basin has a gold
+rush), <strong>stabilize it</strong> (stations, circuits), <strong>hand it to the agents</strong>, and
+move your attention to the next frontier. It is the Factorio arc &mdash; manual,
+then automated, then expand &mdash; mapped onto this game's own theme: attention is
+singular, so the only way to reach the frontier is to make the rear run
+without you.</p>
+
+<p>The mystery is the throttle. Every reopened port holds a fragment &mdash; harbor
+logs, a survivor, the wrecks of the old ferry fleet &mdash; and the
+<code>storyideas.txt</code> S.C.A.N. fiction is the voice for all of it. The player's
+real fuel isn't credits. It's <em>what's in basin four?</em></p>
+
+<h2><span class="tag">&sect;2</span>The certainty loop</h2>
+<p class="kicker">the economy underneath everything</p>
+
+<p style="font-family: var(--mono); font-size: 16px; color: var(--cyan); border: 1px solid var(--line); border-radius: 4px; background: var(--panel); padding: 18px 22px;">
+Decided water is the commodity. Freight consumes it, traffic produces it,
+the anomaly destroys it, and the player is the only one who can spend
+attention on purpose.</p>
+
+<figure>
+<svg viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, Menlo, Consolas, monospace">
+  <defs>
+    <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#56c1e0"/>
+    </marker>
+    <marker id="arrm" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#e068c0"/>
+    </marker>
+    <marker id="arrg" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#4fd68a"/>
+    </marker>
+  </defs>
+
+  <g font-size="12" fill="#d7e6f0">
+    <rect x="290" y="18"  width="140" height="44" rx="4" fill="#0b1d2c" stroke="#1c3a52"/>
+    <text x="360" y="37" text-anchor="middle" fill="#56c1e0">TRAFFIC</text>
+    <text x="360" y="52" text-anchor="middle" fill="#7fa0b4" font-size="10">every hull underway</text>
+
+    <rect x="560" y="170" width="140" height="44" rx="4" fill="#0b1d2c" stroke="#1c3a52"/>
+    <text x="630" y="189" text-anchor="middle" fill="#56c1e0">STABILITY</text>
+    <text x="630" y="204" text-anchor="middle" fill="#7fa0b4" font-size="10">decided water</text>
+
+    <rect x="290" y="330" width="140" height="44" rx="4" fill="#0b1d2c" stroke="#1c3a52"/>
+    <text x="360" y="349" text-anchor="middle" fill="#4fd68a">MARGIN</text>
+    <text x="360" y="364" text-anchor="middle" fill="#7fa0b4" font-size="10">cheap, safe legs</text>
+
+    <rect x="20"  y="170" width="140" height="44" rx="4" fill="#0b1d2c" stroke="#1c3a52"/>
+    <text x="90"  y="189" text-anchor="middle" fill="#56c1e0">COVERAGE</text>
+    <text x="90"  y="204" text-anchor="middle" fill="#7fa0b4" font-size="10">stations &middot; agents</text>
+  </g>
+
+  <g fill="none" stroke="#56c1e0" stroke-width="1.5">
+    <path d="M436 55 Q560 90 618 164" marker-end="url(#arr)"/>
+    <path d="M612 220 Q540 310 436 344" marker-end="url(#arr)"/>
+    <path d="M284 344 Q160 310 96 220" marker-end="url(#arr)"/>
+    <path d="M102 164 Q160 90 284 55" marker-end="url(#arr)"/>
+  </g>
+  <g font-size="10" fill="#7fa0b4">
+    <text x="558" y="96">decides</text>
+    <text x="520" y="303">enables</text>
+    <text x="120" y="303">funds</text>
+    <text x="128" y="96">extends</text>
+  </g>
+
+  <rect x="285" y="172" width="150" height="48" rx="4" fill="#160d1c" stroke="#e068c0"/>
+  <text x="360" y="192" text-anchor="middle" fill="#e068c0" font-size="12">THE ANOMALY</text>
+  <text x="360" y="207" text-anchor="middle" fill="#9b6b8f" font-size="10">hunts the seams</text>
+
+  <g fill="none" stroke="#e068c0" stroke-width="1.3" stroke-dasharray="4 3">
+    <path d="M400 168 Q430 110 358 66" marker-end="url(#arrm)"/>
+    <path d="M440 196 Q505 193 554 192" marker-end="url(#arrm)"/>
+    <path d="M320 224 Q290 285 352 326" marker-end="url(#arrm)"/>
+  </g>
+  <g font-size="10" fill="#9b6b8f">
+    <text x="432" y="118">frightens</text>
+    <text x="472" y="182">erodes</text>
+    <text x="238" y="285">preys on</text>
+  </g>
+
+  <g fill="none" stroke="#4fd68a" stroke-width="1.5">
+    <path d="M160 196 Q225 196 279 196" marker-end="url(#arrg)"/>
+  </g>
+  <text x="172" y="186" font-size="10" fill="#4fd68a">attention: bait &middot; bind &middot; survey</text>
+</svg>
+<figcaption>The certainty loop. Traffic decides the water; decided water makes freight
+cheap; freight funds coverage; coverage keeps traffic sailing. The anomaly attacks
+every edge at once &mdash; a doom spiral the player is paid to fight.</figcaption>
+</figure>
+
+<p>Five rules wire prototype2's existing systems into that loop. They are the
+foundations everything after &sect;3 stands on:</p>
+
+<div class="spec">
+  <p class="h">the five foundations</p>
+  <ul>
+    <li><strong>Commerce is coverage.</strong> Every hull underway decides the water she moves through (moving coverage, <span class="num">3 NM</span>; a <span class="num">10-tick</span> stability floor of <span class="num">2</span> in her track). Busy lanes stay settled; abandoned lanes go feral. Incidents pause traffic &rarr; water undecides &rarr; the spiral.</li>
+    <li><strong>The anomaly hunts the seams.</strong> Lit stations and ports repel it <em>while lit</em>; it prowls the frontier of your paid-for light, leaves a <span class="num">4 NM</span> wake capped at stability <span class="num">1</span>, and fouls stations dark in passing. Re-lighting is a tender errand: a hull, <span class="num">1 tick</span> on station, <span class="num">$800</span>.</li>
+    <li><strong>Attention has customers.</strong> The Array Office posts SURVEY (hold a patch at &ge;3 for N ticks), FIX (a ping-verified read on the contact), and ESCORT (keep a client inside your coverage, <span class="num">1.5&times;</span> rate) on the same aprons, in the same two currencies: dollars and ticks.</li>
+    <li><strong>Noise is a tool.</strong> The contact is noise-drawn (already in the code, <code>NOISE_DRAWS=25</code>) &mdash; so <em>loud is a choice</em>. A flanking, pinging skiff drags its wander south while the freight slips the corridor. Fragile cargo pays you to manage where its attention goes.</li>
+    <li><strong>The story is a contract.</strong> Three verified reads from bearings &ge;45&deg; apart triangulate the contact. Each is a FIX you were paid for anyway &mdash; the story rides the economy instead of interrupting it.</li>
+  </ul>
+</div>
+
+<h2><span class="tag">&sect;3</span>The network: trunks, spokes, and the yard between</h2>
+<p class="kicker">hub-and-spoke &mdash; the pocket planes structure, made maritime</p>
+
+<p>Each basin has exactly one <strong>deep-water port</strong>. Big ships run the trunk lines
+between deep-water ports; small ships work the shallow spokes from the hub to
+final destinations. The hierarchy isn't advisory &mdash; it's enforced by a single
+stat:</p>
+
+<div class="spec">
+  <p class="h">draft, and the fleet hierarchy</p>
+  <ul>
+    <li><strong>Draft</strong>: one number per class, checked against a shallow-water layer on the existing land map. Deep-draft hulls can only berth at deep-water ports. No rule-lawyering &mdash; the freighter physically cannot make the last mile.</li>
+    <li><strong>Spoke classes</strong> (shallow draft): Skiff, Cutter, Lighter &mdash; the existing boats, <span class="num">2&ndash;6</span> hold, cheap, nimble, at home in bad water if handled well.</li>
+    <li><strong>Trunk classes</strong> (deep draft): Coaster (<span class="num">10</span> hold, <span class="num">11 kts</span>) and Freighter (<span class="num">18&ndash;24</span> hold, <span class="num">12 kts</span>, array-grade radar <span class="num">12 NM</span>). Her safety is her array, not armor.</li>
+  </ul>
+</div>
+
+<h3>Staging finds its true purpose</h3>
+<p>Staging &mdash; unmotivated since prototype 1 &mdash; is the system this structure was
+waiting for. <strong>Keep it only at deep-water ports</strong>, where it becomes the
+container yard between trunk and spoke: a freighter drops twelve items into
+stage; skiffs pick them apart by destination over the next day. At spoke ports
+it disappears entirely. One glance at a hub's STAGED section answers the
+network question &mdash; is my Sound flowing, or silting up?</p>
+
+<h3>Time without the cliff: soft windows</h3>
+<p>Contract expiration as prototype2 plays it &mdash; penalty, standing loss, VOID
+bookkeeping &mdash; is three punishments for one lapse. Cut the cliff, keep the
+clock: <strong>standard freight never explodes.</strong> It's a depressed economy;
+shippers are glad anyone ships. Pay decays gently past the quoted window
+(to a floor of <span class="num">~60%</span>) &mdash; late is disappointing, never catastrophic.
+Hard windows survive only where they're opted into and paid for: <strong>priority
+and Office contracts</strong>, clearly marked. And perishables (below) carry time
+pressure diegetically &mdash; salmon spoils; nobody needs a rules lawyer.</p>
+
+<p>The routing dilemma stays intact: a contract from one basin's far shore to
+another's still ages through four legs &mdash; spoke &rarr; stage &rarr; trunk &rarr; spoke &mdash;
+so transshipment is the patient route and a lone skiff running the direct
+crossing is the fast, dicey one. One fairness requirement: <strong>quoted windows
+come from network time</strong> (shortest path over the trunk+spoke graph plus
+<span class="num">~4 ticks</span> handling per transfer), never crow-flight &mdash; or hub routing
+feels rigged against the player.</p>
+
+<h3>Freight that carries the world: tags, not SKUs</h3>
+<p>The contents list stops being flavor text. Post-collapse Salish Sea freight &mdash;
+diesel drums, transformer coils, dock pilings, relief flour, medical
+supplies, nets, smoked salmon, cider, generator parts, <em>mail</em> &mdash; sorted into
+five category tags that do mechanical work without an item simulator:</p>
+
+<div class="spec">
+  <p class="h">cargo tags &mdash; and how they map onto the fleet</p>
+  <ul>
+    <li><strong>MATERIEL</strong> &mdash; feeds restoration manifests. Heavy and patient: the natural cargo of <em>large, slow trunk hulls</em>.</li>
+    <li><strong>HEAVY</strong> &mdash; freighter-only, full stop. Reinforces the hierarchy without a rule in sight.</li>
+    <li><strong>PERISHABLE</strong> &mdash; the home of honest time pressure, and the natural cargo of <em>small, fast spoke hulls</em>. The tag system quietly assigns each ship class its role.</li>
+    <li><strong>FRAGILE</strong> &mdash; anomaly-sensitive; deresolves if the contact closes within <span class="num">6 NM</span>. Pays you to manage where its attention goes.</li>
+    <li><strong>MAIL</strong> &mdash; tiny, cheap, high standing &mdash; and the lore channel: letters as found fiction.</li>
+  </ul>
+</div>
+
+<h3>Other people on the network</h3>
+<p>NPC coasters ply the lit trunk lines &mdash; texture, not dependents. They never
+need rescuing; the player is <em>the only one who goes out there</em>, and that
+identity is worth protecting. But they earn their place three ways:</p>
+
+<div class="spec">
+  <p class="h">what npc traffic does</p>
+  <ul>
+    <li><strong>They keep the water decided.</strong> Their moving coverage feeds the certainty loop &mdash; more stability &rarr; more traffic &rarr; more stability. A reopened basin that draws service back starts maintaining itself: <em>returning traffic is the basin's visible health bar</em>, and the rear heals instead of nagging.</li>
+    <li><strong>They pay tolls.</strong> A commission (<span class="num">~$40</span>) per NPC transit of your lit line segments, licensed and settled through the Array Office &mdash; lighthouse dues, essentially. Buoys become two-sided infrastructure: upkeep out, tolls in. Settled once a market day as a single line (&ldquo;Harrow line: 11 transits, +$440&rdquo;), so the toll figure doubles as the basin's health readout.</li>
+    <li><strong>The reward is freedom from drag, not a revenue stream.</strong> Tune a mature basin's tolls to <span class="num">80&ndash;110%</span> of its upkeep &mdash; never meaningfully above. Healing the rear should stop it costing you money and attention; it must never out-earn sailing, or the optimal play becomes lighting stations to farm traffic, which uses none of the game's verbs. (At <span class="num">$6</span>/tick upkeep and <span class="num">$40</span>/transit, three or four coasters on circuits land near <span class="num">70&ndash;90%</span> unforced.) The ramp as service returns also smooths the post-rush hour: the gold rush fades while tolls rise.</li>
+    <li><strong>Their withdrawal is the storm warning.</strong> &ldquo;KESTREL suspends service&rdquo; telegraphs danger diegetically &mdash; no tutorial box, no rescue obligation.</li>
+  </ul>
+  <p style="margin: 12px 0 0; font-size: 14.5px; color: var(--dim);">Two rules keep them background, not opponents: their routing stays dumb
+  (service <em>frequency</em> scales with stability and standing &mdash; you shape traffic
+  by making water trustworthy, never by gaming a pathfinder), and they never
+  take offers off your aprons. Their trade is abstract tonnage; the toll is
+  your cut of it.</p>
+</div>
+
+<h3>Hub agents, from day one</h3>
+<p>The tedium risk in hub-and-spoke is per-item transfer clicking across five
+basins. So the T2 agent's &ldquo;load whatever serves the circuit&rdquo; logic extends to
+hubs: staged cargo bound for a basin auto-flows onto that basin's circuit
+hulls. The player designs the network and handles exceptions; agents run the
+steady state. This ships <em>with</em> the hub, not after it &mdash; and a silting alarm
+(stage &gt;<span class="num">80%</span> for <span class="num">20</span> ticks) is an interrupt worth waking for.</p>
+
+<h3>Basins have economic identities</h3>
+<p>A timber basin, a fishery basin, an industrial yard &mdash; each weighting its
+export mix through the tags above: materiel flows north on slow trunk hulls,
+perishables sprint the spokes. Trunk flows become directional &mdash; full south,
+light north &mdash; and balancing backhauls is the endgame optimization for players
+who want it, while every basin gets a personality that isn't just its
+hazard.</p>
+
+<p class="connects"><b>connects</b> ship classes, staging, windows, agents, and the
+basin map into one structure &mdash; and gives the fleet a reason to be a fleet.</p>
+
+<h2><span class="tag">&sect;4</span>The moving lighthouse and the convoy</h2>
+<p class="kicker">the highest magic-per-line-of-code in the design</p>
+
+<p><strong>Convoys already exist in the stability math.</strong> Hulls contribute radar
+coverage; coverage stacks; ships sailing together are mechanically a moving
+pocket of decided water. The game needs exactly one new verb &mdash; <em>commit as
+convoy</em>: same leg, paced to the slowest hull, coverage pooled, one interrupt
+stream, any hull detachable back to her own orders. Small ships huddling
+across big water is <em>emergent</em> from code that is already written.</p>
+
+<p>And the freighter is a <strong>moving lighthouse</strong>. Her 12 NM array decides the
+water as she goes, and the corridor she walks holds a stability floor of
+<span class="num">3</span> for <span class="num">6 ticks</span> after her passage &mdash; so skiffs can draft the trunk
+behind her. Scheduling spoke movements around trunk departures gives every hub
+a &ldquo;train is leaving&rdquo; rhythm the whole basin organizes around. It also answers
+why the trunk is safe without making it boring: safety is a scheduled,
+purchasable, interdictable <em>event</em>, not a property of the map.</p>
+
+<p class="connects"><b>connects</b> big and small hulls into one tactical system, and
+&mdash; late game &mdash; gives the anomaly its endgame move: interdict a trunk line, dim
+the lighthouse, and make the company sail together again.</p>
+
+<h2><span class="tag">&sect;5</span>Opening a basin</h2>
+<p class="kicker">the expedition &mdash; the campaign's heartbeat, once per basin</p>
+
+<p>A new basin's deep-water port is broken. No trunk service until it's
+restored &mdash; and restoring it is a <strong>logistics project, not a scripted
+mission</strong>:</p>
+
+<div class="spec">
+  <p class="h">the expedition loop</p>
+  <ul>
+    <li><strong>Scout.</strong> In-hull, quiet, one skiff: find the deep berth, survey the approach, learn the local hazard. The chart is <span class="num">12 years</span> stale; what it shows and what's there have drifted apart.</li>
+    <li><strong>Assemble.</strong> Port repair needs a manifest &mdash; cedar logs, transformers, boat parts (the <code>CONTENTS</code> list finally means something). Accumulate it at the nearest hub. This is freight work: the campaign's biggest beats are made of its smallest verbs.</li>
+    <li><strong>Cross.</strong> Commit the convoy &mdash; small ships in trunk water, pooled coverage against a crossing rated for freighters. Pick your moment against the contact's position. Lose a hull and a third of the repair materials sits in a derelict in bad water: the expedition grows a rescue subplot, not a game over.</li>
+    <li><strong>Restore.</strong> Materials ashore, ticks in the berth, the pier lights section by section. Then the payoff beat: <em>the first freighter comes over the horizon.</em></li>
+    <li><strong>Rush.</strong> Reopened ports post desperation rates (<span class="num">&times;2+</span>, decaying over ~an hour as trade resumes). Every basin has a gold rush; the rush funds the next push. Then circuits take over, and your attention moves on.</li>
+  </ul>
+</div>
+
+<h3>Every deep-water port is a shipyard</h3>
+<p>The Shipyard stops being a special place &mdash; <strong>yard facilities are what a
+deep-water port is</strong>: repairs, refits, the buoy tender, trunk berths, a
+graving dock. Every basin becomes structurally identical (one deep port plus
+spokes), the special-case SHY code disappears, and restoring a basin's deep
+port restores a full-service yard on the frontier &mdash; which matters, because
+the frontier is where hulls get hurt.</p>
+
+<h3>The basin's freighter is a wreck in the basin</h3>
+<p>How does the player ever afford a trunk hull? They don't &mdash; they earn one,
+in three beats that use systems already built: <strong>restore the deep port</strong>
+(the expedition above), <strong>tow her in</strong> &mdash; the basin's old freighter is
+derelict somewhere in local water, and the tow verb exists &mdash; then
+<strong>rebuild her</strong> in the graving dock you just fixed. Port &rarr; tow &rarr; rebuild
+staggers the payoff across the whole gold-rush hour, and the grant varies by
+basin (a freighter here, a coaster there, a special hull, a dry-dock
+capability) so hour eight isn't five identical ships deep.</p>
+
+<h3>Then repair the spokes, port by port</h3>
+<p>The deep port opens the trunk; <strong>each spoke port is its own smaller
+restoration project</strong> &mdash; the original readme's oldest idea, finally home.
+Staged so the basin comes online in visible steps: <strong>crane</strong> first (the port
+can unload), then <strong>apron</strong> (it posts offers), then the local <strong>station</strong>
+(its water lights). Restoration manifests are the demand sink that makes
+MATERIEL flow from day one. The repetition risk across ~a dozen spoke ports
+is handled by varying <em>conditions</em>, not mechanics: one port is intact but
+abandoned, one is wrecked to the waterline, one is inhabited but dark &mdash; and
+wary of you.</p>
+
+<p>Overextension is the campaign's failure pressure: push while the rear's
+upkeep lapses and stations go dark behind you, circuits pause, and you get
+called home. Frontier versus rear is the strategic game &mdash; and it is made of
+attention, which is the theme, priced.</p>
+
+<h2><span class="tag">&sect;6</span>The campaign</h2>
+<p class="kicker">ten hours, five basins, one answer</p>
+
+<p>Each basin has a fixed identity &mdash; the hazard tiers are prototype2's own
+&ldquo;Not yet&rdquo; list, promoted from roadmap bullets to basin personalities &mdash; but
+<strong>the order is the player's</strong>. After the home pocket, the three middle
+basins open in any sequence; only the Source gates behind the rest. Crossing
+difficulty scales naturally with distance from your lit network, so the far
+choice is the bold choice, not a locked door. Chapter cards name each opening
+(&ldquo;II. HARROW REACH&rdquo;) &mdash; ten hours needs punctuation, and which chapter is
+&ldquo;II&rdquo; is up to you:</p>
+
+<div class="twrap"><table>
+  <tr><th>order</th><th>basin</th><th>economy</th><th>what it demands</th></tr>
+  <tr><td>start</td><td>The Home Pocket</td><td>mixed</td><td class="d">The current map. Tutorial-as-play; first circuits; the contact wakes as a rumor; saving toward the first crossing. T1 agent comes free.</td></tr>
+  <tr><td>any</td><td>Harrow Reach</td><td>timber</td><td class="d"><em>Noise-drawn</em>: a hunter in the reach &mdash; quiet convoys, decoy runs, fragile cargo. In the graving dock: CASCADIA, a Lighter with a past.</td></tr>
+  <tr><td>any</td><td>The Shoals</td><td>fishery</td><td class="d"><em>Bearings-only</em>: fog water &mdash; radar short, sonar smeared; navigate by stations and nerve. Perishables everywhere; backhauls run light. A Cutter to raise.</td></tr>
+  <tr><td>any</td><td>Ironworks Basin</td><td>industry</td><td class="d"><em>Bad-chart</em>: the chart lies; re-survey the lanes you use. Heavy imports, evacuation postings, and the first trunk interdiction.</td></tr>
+  <tr><td>last</td><td>The Source</td><td>none left</td><td class="d"><em>Decoherence</em>: manifests stop being facts. Triangulation completes; the reveal; the last voyage &mdash; every spare hull escorting one freighter somewhere she has to go.</td></tr>
+</table></div>
+
+<h3>The fleet is the emotional anchor</h3>
+<p>You don't buy ships from a menu &mdash; you mostly <strong>salvage</strong> them, one per basin,
+each with a name, scars, and the story of where she was lost (&sect;5's
+port&nbsp;&rarr;&nbsp;tow&nbsp;&rarr;&nbsp;rebuild chain). Six to eight hulls by hour eight, most on
+circuits, each one earned. Derelict-and-tow gives losses weight without
+permadeath: she's recoverable, but the recovery is an expedition into the
+water that took her. And every hull keeps a <strong>logbook</strong> &mdash; legs run, tonnage
+delivered, damage survived, where she was raised &mdash; a dozen lines of
+bookkeeping that turns hulls into characters. Attachment is the cheapest
+retention mechanic there is.</p>
+
+<h3>The engine of want, and the ending</h3>
+<p>No debt, no loan, no creditor ticking in the corner &mdash; the campaign itself is
+the money sink. <strong>Expedition manifests and restorations are the capex</strong> that
+savings exist for, and desperation rates <em>decay</em>, so sitting still has
+opportunity cost without a single tax: the pull of the next basin replaces
+the push of a lender. Operating drain stays where it already lives &mdash; fuel
+and station upkeep &mdash; and station tolls (&sect;3) let a healthy lane pay for
+itself. One design watch: if the mid-game goes slack once a rush fades, the
+fix is a more expensive next manifest, not a meter. The ending: reach and
+resolve the Source &mdash; chart it, starve it, or feed it &mdash; with an epilogue
+that reads back your whole Sound: tonnage moving, ports lit, hulls lost,
+lines back in service. Ten hours, done, satisfied. Replay comes free from
+basin order and the ending choice; don't design for more than that.</p>
+
+<h2><span class="tag">&sect;7</span>The rhythm</h2>
+<p class="kicker">dead air, and the emotional ledger</p>
+
+<p><strong>Kill the 16-tick lump.</strong> Each port rolls for one new offer every
+<span class="num">4</span> ticks (~35%); a &ldquo;market day&rdquo; every <span class="num">32</span> keeps the ritual. Thin
+aprons surface <strong>spot charters</strong> (<span class="num">1.3&ndash;1.5&times;</span>, tight windows) &mdash; docking
+into nothing should feel like an opportunity, not a bus stop. And with the
+Office posting surveys and tenders, the idle moment always has a second
+market.</p>
+
+<p><strong>Balance the ledger.</strong> The game currently has one positive beat (docking
+pay) and nine kinds of punishment. Add: standing tier-ups announced with their
+perk (<span class="num">60</span>: priority contracts; <span class="num">75</span>: shippers cover fuel on priority
+runs), bundle jackpots celebrated in the log's own voice, first-time feats
+(&ldquo;first freighter south in nine years&rdquo;), delivery streaks per hull. Cheap
+lines of fiction, disproportionate warmth &mdash; and the fiction is this project's
+best tool.</p>
+
+<p><strong>Respect the ten hours.</strong> Circuits must be trustworthy enough to forget;
+the interrupt list stays small and worth waking for; and a captain's log
+screen tracks story fragments and open contracts so a player returning after
+three days doesn't lose the thread.</p>
+
+<p><strong>The network view is one more press of minus.</strong> The map already zooms
+(<code>-/+ RANGE</code>, <code>SCALE STRATEGIC</code> in the header) &mdash; keep zooming out past
+strategic and the chart becomes the <strong>NETWORK</strong> scale: basins as nodes,
+trunk lines as edges, circuits and their hulls in motion, stage occupancy
+per hub, lanes lit or dark, tolls ticking. One glance answers &ldquo;is my Sound
+flowing or silting?&rdquo; &mdash; and it's where silting alarms land. It unlocks with
+the second basin, so hour one stays a single screen.</p>
+
+<h2><span class="tag">&sect;8</span>The complexity budget</h2>
+<p class="kicker">every addition paid for with a removal or a demotion</p>
+
+<div class="twrap"><table>
+  <tr><th>change</th><th>why</th></tr>
+  <tr><td class="minus">Staging everywhere &rarr; hubs only</td><td class="d">At spoke ports it vanishes (two buttons per row, a screen section, an upgrade line &mdash; gone). At deep-water ports it becomes the transshipment yard it was always meant to be, run mostly by agents.</td></tr>
+  <tr><td class="minus">Power toggles (1/2) &rarr; stances</td><td class="d">NORMAL / QUIET / DARK. Same tactics (&sect;2's noise game needs them), one key, reads like seamanship instead of circuit breakers.</td></tr>
+  <tr><td class="minus">Commit as a separate screen</td><td class="d">Cargo ops already shows BEST QUOTE &mdash; finish the merge; RETURN commits from cargo. One less hop in the minute loop.</td></tr>
+  <tr><td class="minus">Dual map cursor</td><td class="d">One selection ring over ports and hulls (the contacts panel already lists both). Kills the tutorial's own &ldquo;most early confusion.&rdquo;</td></tr>
+  <tr><td class="minus">Shipyard as a special place</td><td class="d">Yard facilities become what every deep-water port is. The special-case SHY code and its one-off rules disappear.</td></tr>
+  <tr><td class="minus">Hard expiration on all contracts</td><td class="d">Soft decay on standard freight; hard windows only on priority/Office contracts and perishables. Deletes the miss-penalty/VOID bookkeeping for ordinary cargo.</td></tr>
+  <tr><td class="plus">What gets added</td><td class="d">Draft (one stat + a shoal layer), the convoy verb (UI only &mdash; the math exists), the lighthouse corridor (a radius and a lingering floor), NPC coasters with station tolls (the agent code, unowned, plus one commission number), cargo tags (five flags on the Contract class), Office contract kinds, staged port restorations (content on the expedition loop), hull logbooks (a dozen counters), the NETWORK zoom (one more map scale), basins and chapter cards (content, not systems), scripted log beats (fiction, not features).</td></tr>
+</table></div>
+
+<p>The additions are mostly <em>connections and content</em> riding systems that exist.
+That's the tell that this is the game prototype2 was already trying to be.</p>
+
+<h2><span class="tag">&sect;9</span>Design gates</h2>
+<p class="kicker">the playtest bot becomes the referee</p>
+
+<p>The repo already has the right culture &mdash; <code>checks.py</code>, <code>fuzz.py</code> &mdash; so the
+design goals are assertions, refereed by headless bots after every balance
+pass:</p>
+
+<div class="spec">
+  <p class="h">accept the design when</p>
+  <ul>
+    <li>The <strong>freight-only bot</strong> (ignores observation, as today) sees its margins go negative by tick <span class="num">~250</span> in at least 4 of 5 seeds, as untended lanes destabilize under it. Ignoring the water must stop being viable.</li>
+    <li>A bot that also re-lights stations and takes surveys stays solvent and can fund its first expedition manifest by tick <span class="num">~300</span>.</li>
+    <li><strong>Convoy gate:</strong> three skiffs crossing trunk water together take under <span class="num">1/3</span> the component damage of three solo crossings &mdash; the pooled-coverage math, verified.</li>
+    <li><strong>Window gate:</strong> &ge;<span class="num">90%</span> of hub-routed priority offers are deliverable in-window at the posted quote when the network is nominal &mdash; transshipment must never be rigged.</li>
+    <li><strong>Toll gate:</strong> with NPC service restored, a mature basin's station tolls cover <span class="num">80&ndash;110%</span> of its upkeep &mdash; self-sustaining, never a business. A bot that lights stations and stops sailing must trend broke.</li>
+    <li><strong>Flow gate:</strong> with T2 circuits running, hub stage occupancy stays below cap indefinitely &mdash; no silting under steady state.</li>
+    <li>Median RETURN run in the mid-game is <span class="num">4&ndash;10</span> ticks &mdash; something worth waking for, that often, no oftener.</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2><span class="tag">&sect;10</span>What doesn't change</h2>
+
+<p>The tick that only moves when spent. The commit screen's exact, honest
+quotes. The honesty flip with no confirmation. Buoys as subscription. The
+log's voice. And the strategic/tactical zoom, which resolves the oldest
+question in <code>storyideas.txt</code> for good: you get the tycoon <em>and</em> the captain's
+chair &mdash; the map is the dispatcher, the in-hull view is the chair, and the
+campaign is what finally makes both of them matter. The finished company is
+two or three freighters on trunk schedules, six or eight small hulls on basin
+circuits, and you at the frontier, spending the one thing that doesn't
+scale.</p>
+
+<p class="foot">Seattle Ferry Inc &middot; campaign design &middot; grounded in the prototype2
+build on <span class="m">text-mode-prototype</span>, a 5-seed headless playtest
+(<span class="m">scratchpad/playtest.py</span>), and the hub-and-spoke direction from
+design review &middot; August 2026</p>
+
+</div>
